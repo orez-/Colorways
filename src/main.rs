@@ -2,8 +2,8 @@ use piston_window::*;
 use sdl2_window::Sdl2Window;
 
 mod app;
-mod block;
-mod player;
+mod color;
+mod entity;
 mod room;
 mod view;
 

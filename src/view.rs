@@ -6,8 +6,7 @@ use piston_window::{Context, DrawState, UpdateArgs, Transformed, Polygon};
 use piston_window::draw_state::Blend;
 use image;
 use crate::app::HeldKeys;
-use crate::block::Block;
-use crate::player::Player;
+use crate::entity::{Entity, Player};
 use crate::room::Room;
 
 const DISPLAY_WIDTH: f64 = 200.;
@@ -49,29 +48,21 @@ impl Direction {
     }
 }
 
-pub enum Color {
-    Gray,
-    Red,
-    Green,
-    Blue,
-    White,
-}
-
 pub struct GameView {
     texture: GlTexture,
     player: Player,
     room: Room,
-    blocks: Vec<Block>,
+    entities: Vec<Entity>,
 }
 
 impl GameView {
     pub fn new() -> Self {
-        let (room, player, blocks) = Room::new();
+        let (room, player, entities) = Room::new();
         GameView {
             texture: load_texture(),
             player,
             room,
-            blocks,
+            entities,
         }
     }
 
@@ -107,8 +98,8 @@ impl GameView {
             gl,
         );
 
-        for block in &self.blocks {
-            block.sprite().draw(
+        for entity in &self.entities {
+            entity.sprite().draw(
                 &self.texture,
                 &DrawState::default(),
                 context.transform,
@@ -134,8 +125,8 @@ impl GameView {
 
     pub fn update(&mut self, args: &UpdateArgs, held_keys: &HeldKeys) {
         self.player.update(args);
-        for block in self.blocks.iter_mut() {
-            block.update(args);
+        for entity in self.entities.iter_mut() {
+            entity.update(args);
         }
         for key in held_keys.iter() {
             let maybe_direction = match key {
@@ -150,11 +141,11 @@ impl GameView {
                 let (nx, ny) = direction.from(self.player.x, self.player.y);
                 let tile = self.room.tile_at(nx, ny);
                 if self.player.can_walk() && tile.map_or(false, |tile| tile.is_passable()) {
-                    if let Some(block_idx) = self.block_at(nx, ny) {
+                    if let Some(entity_id) = self.entity_at(nx, ny) {
                         let (nnx, nny) = direction.from(nx, ny);
                         let next_tile = self.room.tile_at(nnx, nny);
                         if next_tile.map_or(false, |tile| tile.is_passable()) {
-                            self.blocks[block_idx].push(&direction);
+                            self.entities[entity_id].push(&direction);
                             self.player.walk(&direction);
                         }
                     }
@@ -166,8 +157,8 @@ impl GameView {
         }
     }
 
-    fn block_at(&mut self, x: i32, y: i32) -> Option<usize> {
-        self.blocks.iter()
-            .position(|block| block.x == x && block.y == y)
+    fn entity_at(&mut self, x: i32, y: i32) -> Option<usize> {
+        self.entities.iter()
+            .position(|e| e.x() == x && e.y() == y)
     }
 }

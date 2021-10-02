@@ -1,9 +1,8 @@
 use piston_window::{Context, DrawState, Image};
 use opengl_graphics::GlGraphics;
 use opengl_graphics::Texture as GlTexture;
-use crate::block::Block;
-use crate::player::Player;
-use crate::view::Color;
+use crate::entity::{Block, Entity, Lightbulb, Player};
+use crate::color::Color;
 
 const ONE_START_MSG: &str = "level must have exactly one starting position";
 const LEVEL2: &[u8] = include_bytes!("../bin/levels/level3.skb");
@@ -50,7 +49,7 @@ impl Tile {
     }
 }
 
-type Game = (Room, Player, Vec<Block>);
+type Game = (Room, Player, Vec<Entity>);
 
 pub struct Room {
     width: usize,
@@ -75,16 +74,19 @@ impl Room {
         let mut x = 0;
         let mut y = 0;
         let mut player = None;
-        let mut blocks = Vec::new();
+        let mut entities = Vec::new();
         for &byte in bytes {
             match byte as char {
                 'a' => {
                     if player.is_some() { panic!("{}", ONE_START_MSG); }
                     player = Some(Player::new(x, y));
                 },
-                'b' => { blocks.push(Block::new(x, y, Color::Gray)); },
-                'r' => { blocks.push(Block::new(x, y, Color::Red)); },
-                'w' => { blocks.push(Block::new(x, y, Color::White)); },
+                'b' => { entities.push(Entity::Block(Block::new(x, y, Color::Gray))); },
+                'r' => { entities.push(Entity::Block(Block::new(x, y, Color::Red))); },
+                'w' => { entities.push(Entity::Block(Block::new(x, y, Color::White))); },
+                'R' => { entities.push(Entity::Lightbulb(Lightbulb::new(x, y, Color::Red))); },
+                'G' => { entities.push(Entity::Lightbulb(Lightbulb::new(x, y, Color::Green))); },
+                'B' => { entities.push(Entity::Lightbulb(Lightbulb::new(x, y, Color::Blue))); },
                 '\n' => {
                     x = 0;
                     y += 1;
@@ -97,7 +99,7 @@ impl Room {
         (
             Room { width, height, tiles },
             player.expect(ONE_START_MSG),
-            blocks,
+            entities,
         )
     }
 

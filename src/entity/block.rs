@@ -1,15 +1,12 @@
 use piston_window::{Image, UpdateArgs};
-use crate::view::{Color, Direction};
+use crate::color::Color;
+use crate::view::Direction;
 
 const TILE_SIZE: f64 = 16.;
 const BLOCK_OFFSET_Y: f64 = 8.;
 const BLOCK_WIDTH: f64 = 16.;
 const BLOCK_HEIGHT: f64 = 24.;
 const BLOCK: [f64; 4] = [64., 0., BLOCK_WIDTH, BLOCK_HEIGHT];
-
-const GRAY: [f32; 4] = [0.3, 0.3, 0.3, 1.];
-const RED: [f32; 4] = [1., 0., 0., 1.];
-const WHITE: [f32; 4] = [1., 1., 1., 1.];
 
 enum State {
     Idle,
@@ -34,20 +31,11 @@ impl Block {
         }
     }
 
-    fn color(&self) -> [f32; 4] {
-        match self.color {
-            Color::Gray => GRAY,
-            Color::Red => RED,
-            Color::White => WHITE,
-            _ => WHITE,
-        }
-    }
-
     pub fn sprite(&self) -> Image {
         let x = self.x as f64 * TILE_SIZE;
         let y = self.y as f64 * TILE_SIZE - BLOCK_OFFSET_Y;
         let (sx, sy) = self.sub_position();
-        Image::new_color(self.color())
+        Image::new_color(self.color.as_component())
             .src_rect(BLOCK)
             .rect([x - sx, y - sy, BLOCK_WIDTH, BLOCK_HEIGHT])
     }
