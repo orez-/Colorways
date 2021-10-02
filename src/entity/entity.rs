@@ -6,6 +6,7 @@ use crate::entity;
 pub enum Entity {
     Block(entity::Block),
     Lightbulb(entity::Lightbulb),
+    LightSwitch(entity::LightSwitch),
 }
 use Entity::*;
 
@@ -14,6 +15,7 @@ impl Entity {
         match self {
             Block(e) => e.sprite(),
             Lightbulb(e) => e.sprite(),
+            LightSwitch(e) => e.sprite(),
         }
     }
 
@@ -21,6 +23,7 @@ impl Entity {
         match self {
             Block(e) => e.update(args),
             Lightbulb(e) => e.update(args),
+            LightSwitch(e) => e.update(args),
         }
     }
 
@@ -28,6 +31,7 @@ impl Entity {
         match self {
             Block(e) => e.push(direction),
             Lightbulb(e) => e.push(direction),
+            LightSwitch(e) => e.push(direction),
         }
     }
 
@@ -35,6 +39,7 @@ impl Entity {
         match self {
             Block(e) => e.x,
             Lightbulb(e) => e.x,
+            LightSwitch(e) => e.x,
         }
     }
 
@@ -42,6 +47,7 @@ impl Entity {
         match self {
             Block(e) => e.y,
             Lightbulb(e) => e.y,
+            LightSwitch(e) => e.y,
         }
     }
 }

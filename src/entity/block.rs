@@ -24,7 +24,7 @@ pub struct Block {
 
 impl Block {
     pub fn new(x: i32, y: i32, color: Color) -> Self {
-        Block {
+        Self {
             x, y, state: Idle,
             facing: Direction::East,
             color,

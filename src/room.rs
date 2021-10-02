@@ -1,7 +1,7 @@
 use piston_window::{Context, DrawState, Image};
 use opengl_graphics::GlGraphics;
 use opengl_graphics::Texture as GlTexture;
-use crate::entity::{Block, Entity, Lightbulb, Player};
+use crate::entity::{Block, Entity, Lightbulb, LightSwitch, Player};
 use crate::color::Color;
 
 const ONE_START_MSG: &str = "level must have exactly one starting position";
@@ -87,6 +87,9 @@ impl Room {
                 'R' => { entities.push(Entity::Lightbulb(Lightbulb::new(x, y, Color::Red))); },
                 'G' => { entities.push(Entity::Lightbulb(Lightbulb::new(x, y, Color::Green))); },
                 'B' => { entities.push(Entity::Lightbulb(Lightbulb::new(x, y, Color::Blue))); },
+                '1' => { entities.push(Entity::LightSwitch(LightSwitch::new(x, y, Color::Red))); },
+                '2' => { entities.push(Entity::LightSwitch(LightSwitch::new(x, y, Color::Green))); },
+                '3' => { entities.push(Entity::LightSwitch(LightSwitch::new(x, y, Color::Blue))); },
                 '\n' => {
                     x = 0;
                     y += 1;
