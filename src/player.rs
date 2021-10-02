@@ -85,7 +85,7 @@ impl Player {
         let y = self.y as f64 * TILE_SIZE;
         Image::new()
             .src_rect(src)
-            .rect([x - sx, y - sy, PLAYER_WIDTH, PLAYER_HEIGHT])
+            .rect([x - sx, y - sy + 4., PLAYER_WIDTH, PLAYER_HEIGHT])
     }
 
     pub fn center(&self) -> (i64, i64) {
