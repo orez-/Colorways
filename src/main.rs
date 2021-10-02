@@ -3,6 +3,7 @@ use sdl2_window::Sdl2Window;
 
 mod app;
 mod player;
+mod room;
 mod view;
 // mod maze;
 

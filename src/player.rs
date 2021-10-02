@@ -8,6 +8,8 @@ use crate::view::Direction::*;
 const TILE_SIZE: f64 = 16.;
 const PLAYER_WIDTH: f64 = 16.;
 const PLAYER_HEIGHT: f64 = 24.;
+const PLAYER_WIDTH_HALF: f64 = PLAYER_WIDTH / 2.;
+const PLAYER_HEIGHT_HALF: f64 = PLAYER_HEIGHT / 2.;
 const PLAYER_IDLE_RIGHT: [f64; 4] = [0., 0., PLAYER_WIDTH, PLAYER_HEIGHT];
 const PLAYER_IDLE_LEFT: [f64; 4] = [16., 0., -PLAYER_WIDTH, PLAYER_HEIGHT];
 const PLAYER_RUN_RIGHT: [f64; 4] = [0., 24., PLAYER_WIDTH, PLAYER_HEIGHT];
@@ -84,6 +86,13 @@ impl Player {
         Image::new()
             .src_rect(src)
             .rect([x - sx, y - sy, PLAYER_WIDTH, PLAYER_HEIGHT])
+    }
+
+    pub fn center(&self) -> (i64, i64) {
+        let (sx, sy) = self.sub_position();
+        let x = self.x as f64 * TILE_SIZE + PLAYER_WIDTH_HALF;
+        let y = self.y as f64 * TILE_SIZE + PLAYER_HEIGHT_HALF;
+        (x as i64 - sx as i64, y as i64 - sy as i64)
     }
 
     pub fn face(&mut self, direction: &Direction) {
