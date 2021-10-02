@@ -2,9 +2,10 @@ use opengl_graphics::Filter;
 use opengl_graphics::GlGraphics;
 use opengl_graphics::Texture as GlTexture;
 use piston_window::{Button, Key};
-use piston_window::{Context, DrawState, UpdateArgs, Image, Transformed};
+use piston_window::{Context, DrawState, UpdateArgs, Transformed};
 use image;
 use crate::app::HeldKeys;
+use crate::block::Block;
 use crate::player::Player;
 use crate::room::Room;
 
@@ -14,7 +15,6 @@ const DISPLAY_WIDTH_HALF: i64 = DISPLAY_WIDTH as i64 / 2;
 const DISPLAY_HEIGHT_HALF: i64 = DISPLAY_HEIGHT as i64 / 2;
 
 const TEXTURE: &[u8] = include_bytes!("../bin/spritesheet.png");
-const BLOCK: [f64; 4] = [64., 0., 16., 24.];
 
 fn load_texture() -> GlTexture {
     let mut texture_settings = opengl_graphics::TextureSettings::new();
@@ -37,18 +37,32 @@ pub enum Direction {
 }
 use Direction::*;
 
+impl Direction {
+    fn from(&self, x: i32, y: i32) -> (i32, i32) {
+        match self {
+            North => (x, y - 1),
+            West => (x - 1, y),
+            South => (x, y + 1),
+            East => (x + 1, y),
+        }
+    }
+}
+
 pub struct GameView {
     texture: GlTexture,
     player: Player,
     room: Room,
+    blocks: Vec<Block>,
 }
 
 impl GameView {
     pub fn new() -> Self {
+        let (room, player, blocks) = Room::new();
         GameView {
             texture: load_texture(),
-            player: Player::new(),
-            room: Room::new(),
+            player,
+            room,
+            blocks,
         }
     }
 
@@ -83,37 +97,29 @@ impl GameView {
             &context,
             gl,
         );
-        Image::new()
-            .src_rect(BLOCK)
-            .rect([16., 16., 16., 24.])
-            .draw(
-                &self.texture,
-                &DrawState::default(),
-                context.transform,
-                gl,
-            );
 
-        Image::new()
-            .src_rect(BLOCK)
-            .rect([48., 16., 16., 24.])
-            .draw(
+        for block in &self.blocks {
+            block.sprite().draw(
                 &self.texture,
                 &DrawState::default(),
                 context.transform,
                 gl,
             );
+        }
 
-        self.player.sprite()
-            .draw(
-                &self.texture,
-                &DrawState::default(),
-                context.transform,
-                gl,
-            );
+        self.player.sprite().draw(
+            &self.texture,
+            &DrawState::default(),
+            context.transform,
+            gl,
+        );
     }
 
     pub fn update(&mut self, args: &UpdateArgs, held_keys: &HeldKeys) {
         self.player.update(args);
+        for block in self.blocks.iter_mut() {
+            block.update(args);
+        }
         for key in held_keys.iter() {
             let maybe_direction = match key {
                 Button::Keyboard(Key::W) => Some(North),
@@ -124,8 +130,27 @@ impl GameView {
             };
             if let Some(direction) = maybe_direction {
                 self.player.face(&direction);
-                self.player.walk(&direction);
+                let (nx, ny) = direction.from(self.player.x, self.player.y);
+                let tile = self.room.tile_at(nx, ny);
+                if self.player.can_walk() && tile.map_or(false, |tile| tile.is_passable()) {
+                    if let Some(block_idx) = self.block_at(nx, ny) {
+                        let (nnx, nny) = direction.from(nx, ny);
+                        let next_tile = self.room.tile_at(nnx, nny);
+                        if next_tile.map_or(false, |tile| tile.is_passable()) {
+                            self.blocks[block_idx].push(&direction);
+                            self.player.walk(&direction);
+                        }
+                    }
+                    else {
+                        self.player.walk(&direction);
+                    }
+                }
             }
         }
+    }
+
+    fn block_at(&mut self, x: i32, y: i32) -> Option<usize> {
+        self.blocks.iter()
+            .position(|block| block.x == x && block.y == y)
     }
 }

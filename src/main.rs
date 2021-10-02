@@ -2,10 +2,10 @@ use piston_window::*;
 use sdl2_window::Sdl2Window;
 
 mod app;
+mod block;
 mod player;
 mod room;
 mod view;
-// mod maze;
 
 fn main() {
     use opengl_graphics::GlGraphics;

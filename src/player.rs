@@ -23,18 +23,17 @@ enum State {
 pub struct Player {
     face_left: bool,
     facing: Direction,
-    x: i32,
-    y: i32,
+    pub x: i32,
+    pub y: i32,
     state: State,
 }
 
 impl Player {
-    pub fn new() -> Self {
+    pub fn new(x: i32, y: i32) -> Self {
         Player {
             face_left: false,
             facing: West,
-            x: 0,
-            y: 0,
+            x, y,
             state: State::Idle,
         }
     }
@@ -85,14 +84,14 @@ impl Player {
         let y = self.y as f64 * TILE_SIZE;
         Image::new()
             .src_rect(src)
-            .rect([x - sx, y - sy + 4., PLAYER_WIDTH, PLAYER_HEIGHT])
+            .rect([x - sx, y - sy - 12., PLAYER_WIDTH, PLAYER_HEIGHT])
     }
 
     pub fn center(&self) -> (i64, i64) {
         let (sx, sy) = self.sub_position();
         let x = self.x as f64 * TILE_SIZE + PLAYER_WIDTH_HALF;
         let y = self.y as f64 * TILE_SIZE + PLAYER_HEIGHT_HALF;
-        (x as i64 - sx as i64, y as i64 - sy as i64)
+        (x as i64 - sx as i64, y as i64 - sy as i64 - 12)
     }
 
     pub fn face(&mut self, direction: &Direction) {
@@ -117,6 +116,13 @@ impl Player {
                 true
             }
             State::Walk(_) => false,
+        }
+    }
+
+    pub fn can_walk(&self) -> bool {
+        match &self.state {
+            State::Idle => true,
+            _ => false,
         }
     }
 }
