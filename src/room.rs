@@ -1,5 +1,4 @@
 use std::collections::HashMap;
-use std::iter::FromIterator;
 use bitmask_enum::bitmask;
 use piston_window::{Context, DrawState, Image};
 use opengl_graphics::GlGraphics;
@@ -95,19 +94,19 @@ fn to_walls_polygon(tiles: &[Tile], width: usize) -> geo::MultiPolygon<f64> {
 
             match connections.get_mut(&(x + 1, y)) {
                 Some(value) if (*value).contains(SquareEdge::Left) => { *value &= !SquareEdge::Left; },
-                _ => { *connections.entry((x, y)).or_insert(SquareEdge::none()) |= SquareEdge::Right; },
+                _ => { *connections.entry((x, y)).or_insert_with(SquareEdge::none) |= SquareEdge::Right; },
             }
             match connections.get_mut(&(x + 1, y + 1)) {
                 Some(value) if (*value).contains(SquareEdge::Up) => { *value &= !SquareEdge::Up; },
-                _ => { *connections.entry((x + 1, y)).or_insert(SquareEdge::none()) |= SquareEdge::Down; },
+                _ => { *connections.entry((x + 1, y)).or_insert_with(SquareEdge::none) |= SquareEdge::Down; },
             }
             match connections.get_mut(&(x, y + 1)) {
                 Some(value) if (*value).contains(SquareEdge::Right) => { *value &= !SquareEdge::Right; },
-                _ => { *connections.entry((x + 1, y + 1)).or_insert(SquareEdge::none()) |= SquareEdge::Left; },
+                _ => { *connections.entry((x + 1, y + 1)).or_insert_with(SquareEdge::none) |= SquareEdge::Left; },
             }
             match connections.get_mut(&(x, y)) {
                 Some(value) if (*value).contains(SquareEdge::Down) => { *value &= !SquareEdge::Down; },
-                _ => { *connections.entry((x, y + 1)).or_insert(SquareEdge::none()) |= SquareEdge::Up; },
+                _ => { *connections.entry((x, y + 1)).or_insert_with(SquareEdge::none) |= SquareEdge::Up; },
             }
         }
     }
