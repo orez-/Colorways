@@ -1,13 +1,12 @@
-use piston_window::DrawState;
-use piston_window::Context;
+use piston_window::{Context, DrawState, Image};
 use opengl_graphics::GlGraphics;
 use opengl_graphics::Texture as GlTexture;
-use piston_window::Image;
 use crate::block::Block;
 use crate::player::Player;
+use crate::view::Color;
 
 const ONE_START_MSG: &str = "level must have exactly one starting position";
-const LEVEL2: &[u8] = include_bytes!("../bin/levels/level2.skb");
+const LEVEL2: &[u8] = include_bytes!("../bin/levels/level3.skb");
 // const LEVEL2: &[u8] = include_bytes!("../bin/levels/playground.skb");
 const TILE_SIZE: f64 = 16.;
 const WALL: [f64; 4] = [32., 0., TILE_SIZE, TILE_SIZE];
@@ -83,7 +82,9 @@ impl Room {
                     if player.is_some() { panic!("{}", ONE_START_MSG); }
                     player = Some(Player::new(x, y));
                 },
-                'b' => { blocks.push(Block::new(x, y)); },
+                'b' => { blocks.push(Block::new(x, y, Color::Gray)); },
+                'r' => { blocks.push(Block::new(x, y, Color::Red)); },
+                'w' => { blocks.push(Block::new(x, y, Color::White)); },
                 '\n' => {
                     x = 0;
                     y += 1;

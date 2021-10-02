@@ -2,7 +2,8 @@ use opengl_graphics::Filter;
 use opengl_graphics::GlGraphics;
 use opengl_graphics::Texture as GlTexture;
 use piston_window::{Button, Key};
-use piston_window::{Context, DrawState, UpdateArgs, Transformed};
+use piston_window::{Context, DrawState, UpdateArgs, Transformed, Polygon};
+use piston_window::draw_state::Blend;
 use image;
 use crate::app::HeldKeys;
 use crate::block::Block;
@@ -46,6 +47,14 @@ impl Direction {
             East => (x + 1, y),
         }
     }
+}
+
+pub enum Color {
+    Gray,
+    Red,
+    Green,
+    Blue,
+    White,
 }
 
 pub struct GameView {
@@ -113,6 +122,14 @@ impl GameView {
             context.transform,
             gl,
         );
+
+        let polygon = Polygon::new([1.0, 0.0, 0.0, 1.0]);
+        polygon.draw(
+            &[[0., 0.], [16. * 10.5, 16. * 13.5], [0., 16. * 25.]],
+            &DrawState::default().blend(Blend::Multiply),
+            context.transform,
+            gl,
+        )
     }
 
     pub fn update(&mut self, args: &UpdateArgs, held_keys: &HeldKeys) {
