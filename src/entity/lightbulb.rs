@@ -1,6 +1,6 @@
 use piston_window::{Image, UpdateArgs};
 use crate::color::Color;
-use crate::view::Direction;
+use crate::view::{Direction, GameView};
 
 const TILE_SIZE: f64 = 16.;
 const LIGHTBULB: [f64; 4] = [16., 16., TILE_SIZE, TILE_SIZE];
@@ -25,5 +25,8 @@ impl Lightbulb {
     }
 
     pub fn update(&mut self, _args: &UpdateArgs) {}
-    pub fn push(&mut self, _direction: &Direction) { }
+    pub fn is_approachable(&self, _direction: &Direction, _game: &GameView) -> bool {
+        false
+    }
+    pub fn on_approach(&mut self, _direction: &Direction) { }
 }

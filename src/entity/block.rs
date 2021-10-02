@@ -1,6 +1,6 @@
 use piston_window::{Image, UpdateArgs};
 use crate::color::Color;
-use crate::view::Direction;
+use crate::view::{Direction, GameView};
 
 const TILE_SIZE: f64 = 16.;
 const BLOCK_OFFSET_Y: f64 = 8.;
@@ -64,7 +64,16 @@ impl Block {
         (0., 0.)
     }
 
-    pub fn push(&mut self, direction: &Direction) {
+    pub fn is_approachable(&self, direction: &Direction, view: &GameView) -> bool {
+        let (nx, ny) = direction.from(self.x, self.y);
+        view.tile_is_passable(nx, ny) && view.entity_at(nx, ny).is_none()
+    }
+
+    pub fn on_approach(&mut self, direction: &Direction) {
+        self.push(&direction);
+    }
+
+    fn push(&mut self, direction: &Direction) {
         match direction {
             Direction::North => self.y -= 1,
             Direction::West => self.x -= 1,

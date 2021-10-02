@@ -38,7 +38,7 @@ pub enum Direction {
 use Direction::*;
 
 impl Direction {
-    fn from(&self, x: i32, y: i32) -> (i32, i32) {
+    pub fn from(&self, x: i32, y: i32) -> (i32, i32) {
         match self {
             North => (x, y - 1),
             West => (x - 1, y),
@@ -139,13 +139,10 @@ impl GameView {
             if let Some(direction) = maybe_direction {
                 self.player.face(&direction);
                 let (nx, ny) = direction.from(self.player.x, self.player.y);
-                let tile = self.room.tile_at(nx, ny);
-                if self.player.can_walk() && tile.map_or(false, |tile| tile.is_passable()) {
+                if self.player.can_walk() && self.tile_is_passable(nx, ny) {
                     if let Some(entity_id) = self.entity_at(nx, ny) {
-                        let (nnx, nny) = direction.from(nx, ny);
-                        let next_tile = self.room.tile_at(nnx, nny);
-                        if next_tile.map_or(false, |tile| tile.is_passable()) {
-                            self.entities[entity_id].push(&direction);
+                        if self.entities[entity_id].is_approachable(&direction, &self) {
+                            self.entities[entity_id].on_approach(&direction);
                             self.player.walk(&direction);
                         }
                     }
@@ -157,7 +154,12 @@ impl GameView {
         }
     }
 
-    fn entity_at(&mut self, x: i32, y: i32) -> Option<usize> {
+    pub fn tile_is_passable(&self, x: i32, y: i32) -> bool {
+        let tile = self.room.tile_at(x, y);
+        tile.map_or(false, |tile| tile.is_passable())
+    }
+
+    pub fn entity_at(&self, x: i32, y: i32) -> Option<usize> {
         self.entities.iter()
             .position(|e| e.x() == x && e.y() == y)
     }

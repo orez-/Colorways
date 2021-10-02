@@ -1,5 +1,5 @@
 use piston_window::{Image, UpdateArgs};
-use crate::view::Direction;
+use crate::view::{GameView, Direction};
 use crate::entity;
 
 // The boilerplatenest file. Try to stay out of here as much as possible.
@@ -27,11 +27,19 @@ impl Entity {
         }
     }
 
-    pub fn push(&mut self, direction: &Direction) {
+    pub fn is_approachable(&self, direction: &Direction, game: &GameView) -> bool {
         match self {
-            Block(e) => e.push(direction),
-            Lightbulb(e) => e.push(direction),
-            LightSwitch(e) => e.push(direction),
+            Block(e) => e.is_approachable(direction, game),
+            Lightbulb(e) => e.is_approachable(direction, game),
+            LightSwitch(e) => e.is_approachable(direction, game),
+        }
+    }
+
+    pub fn on_approach(&mut self, direction: &Direction) {
+        match self {
+            Block(e) => e.on_approach(direction),
+            Lightbulb(e) => e.on_approach(direction),
+            LightSwitch(e) => e.on_approach(direction),
         }
     }
 
