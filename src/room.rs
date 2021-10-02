@@ -63,11 +63,10 @@ impl Room {
     }
 
     pub fn from_file(bytes: &[u8]) -> Game {
-        let width = bytes.iter().position(|&c| c == '\n' as u8).unwrap();
+        let width = bytes.iter().position(|&c| c == b'\n').unwrap();
         let tiles: Vec<_> = bytes.iter()
             .filter_map(|&c| {
-                let c = c as char;
-                (c != '\n').then(|| Tile::from_chr(c as char))
+                (c != b'\n').then(|| Tile::from_chr(c as char))
             }).collect();
         let height = tiles.len() / width;
 

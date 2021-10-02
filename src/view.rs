@@ -4,7 +4,6 @@ use opengl_graphics::Texture as GlTexture;
 use piston_window::{Button, Key};
 use piston_window::{Context, DrawState, UpdateArgs, Transformed, Polygon};
 use piston_window::draw_state::Blend;
-use image;
 use crate::app::HeldKeys;
 use crate::entity::{Entity, Player};
 use crate::room::Room;
@@ -141,7 +140,7 @@ impl GameView {
                 let (nx, ny) = direction.from(self.player.x, self.player.y);
                 if self.player.can_walk() && self.tile_is_passable(nx, ny) {
                     if let Some(entity_id) = self.entity_at(nx, ny) {
-                        if self.entities[entity_id].is_approachable(&direction, &self) {
+                        if self.entities[entity_id].is_approachable(&direction, self) {
                             self.entities[entity_id].on_approach(&direction);
                             self.player.walk(&direction);
                         }

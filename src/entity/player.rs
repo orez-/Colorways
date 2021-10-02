@@ -120,9 +120,6 @@ impl Player {
     }
 
     pub fn can_walk(&self) -> bool {
-        match &self.state {
-            State::Idle => true,
-            _ => false,
-        }
+        matches!(&self.state, State::Idle)
     }
 }

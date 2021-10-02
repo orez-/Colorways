@@ -70,7 +70,7 @@ impl Block {
     }
 
     pub fn on_approach(&mut self, direction: &Direction) {
-        self.push(&direction);
+        self.push(direction);
     }
 
     fn push(&mut self, direction: &Direction) {
