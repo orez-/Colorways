@@ -1,6 +1,4 @@
 use std::collections::HashSet;
-use geo::{Coordinate, Line, Point};
-use geo::map_coords::MapCoords as _;
 use geo_visibility::Visibility as _;
 use crate::room::Room;
 
@@ -18,7 +16,10 @@ impl Visibility {
 }
 
 pub fn line_of_sight(viewer_x: i32, viewer_y: i32, room: &Room) -> Visibility {
-    let viewer = Point::new((viewer_x as f64 + 0.5) * TILE_SIZE, (viewer_y as f64 + 0.5) * TILE_SIZE);
+    let viewer = geo::Point::new(
+        (viewer_x as f64 + 0.5) * TILE_SIZE,
+        (viewer_y as f64 + 0.5) * TILE_SIZE,
+    );
     let polygon = viewer.visibility(&room.walls_polygon);
     let mut vis = Visibility::new();
     // just give me the floats. for gods sake please just give me the floats.
