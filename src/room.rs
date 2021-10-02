@@ -80,8 +80,10 @@ impl Room {
                     if player.is_some() { panic!("{}", ONE_START_MSG); }
                     player = Some(Player::new(x, y));
                 },
-                'b' => { entities.push(Entity::Block(Block::new(x, y, Color::Gray))); },
+                'k' => { entities.push(Entity::Block(Block::new(x, y, Color::Gray))); },
                 'r' => { entities.push(Entity::Block(Block::new(x, y, Color::Red))); },
+                'g' => { entities.push(Entity::Block(Block::new(x, y, Color::Green))); },
+                'b' => { entities.push(Entity::Block(Block::new(x, y, Color::Blue))); },
                 'w' => { entities.push(Entity::Block(Block::new(x, y, Color::White))); },
                 'R' => { entities.push(Entity::Lightbulb(Lightbulb::new(x, y, Color::Red))); },
                 'G' => { entities.push(Entity::Lightbulb(Lightbulb::new(x, y, Color::Green))); },
