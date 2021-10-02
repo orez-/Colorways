@@ -47,6 +47,11 @@ impl Direction {
     }
 }
 
+struct Light {
+    points: Vec<[f64; 2]>,
+    color: [f32; 4],
+}
+
 pub struct GameView {
     texture: GlTexture,
     player: Player,
@@ -87,12 +92,65 @@ impl GameView {
         (xs[1], ys[1])
     }
 
+    fn render_lights(&self, gl: &mut GlGraphics, context: &Context) {
+        let draw_type = DrawState::default().blend(Blend::Add);
+        let mut lights = Vec::new();
+        let px = 10.5;
+        let py = 13.5;
+        lights.push(
+            Light { points: vec![[0., (py - px) * 16.], [16. * px, 16. * py], [0., 16. * (py + px)]],
+                color: [0.0, 0.0, 1.0, 1.0] });
+
+        let px = 10.5;
+        let py = 17.5;
+        lights.push(
+            Light { points: vec![[0., (py - px) * 16.], [16. * px, 16. * py], [0., 16. * (py + px)]],
+                    color: [0.0, 1.0, 0.0, 1.0] });
+
+        let rx = 23. * 16.;
+        let px = 12.5;
+        let py = 13.5;
+        lights.push(
+            Light { points: vec![[rx, (py - px) * 16.], [16. * px, 16. * py], [rx, 16. * (py + px)]],
+                    color: [1.0, 0.0, 0.0, 1.0] });
+
+        let px = 12.5;
+        let py = 17.5;
+        lights.push(
+            Light { points: vec![[rx, (py - px) * 16.], [16. * px, 16. * py], [rx, 16. * (py + px)]],
+                    color: [0.0, 0.0, 1.0, 1.0] });
+
+        for light in &lights {
+            let polygon = Polygon::new([0.3, 0.3, 0.3, 1.]);
+            polygon.draw(
+                &light.points,
+                &DrawState::default(),
+                context.transform,
+                gl,
+            );
+        }
+        for light in &lights {
+            let polygon = Polygon::new(light.color);
+            polygon.draw(
+                &light.points,
+                &draw_type,
+                context.transform,
+                gl,
+            );
+        }
+    }
+
     pub fn render(&self, gl: &mut GlGraphics) {
+        // Camera
         let context = self.camera_context();
 
+        // Lights
+        self.render_lights(gl, &context);
+
+        // Action
         self.room.render(
             &self.texture,
-            &DrawState::default(),
+            &DrawState::default().blend(Blend::Multiply),
             &context,
             gl,
         );
@@ -100,7 +158,7 @@ impl GameView {
         for entity in &self.entities {
             entity.sprite().draw(
                 &self.texture,
-                &DrawState::default(),
+                &DrawState::default().blend(Blend::Multiply),
                 context.transform,
                 gl,
             );
@@ -108,18 +166,10 @@ impl GameView {
 
         self.player.sprite().draw(
             &self.texture,
-            &DrawState::default(),
-            context.transform,
-            gl,
-        );
-
-        let polygon = Polygon::new([1.0, 0.0, 0.0, 1.0]);
-        polygon.draw(
-            &[[0., 0.], [16. * 10.5, 16. * 13.5], [0., 16. * 25.]],
             &DrawState::default().blend(Blend::Multiply),
             context.transform,
             gl,
-        )
+        );
     }
 
     pub fn update(&mut self, args: &UpdateArgs, held_keys: &HeldKeys) {

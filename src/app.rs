@@ -19,7 +19,7 @@ impl App {
     pub fn render(&mut self, args: &RenderArgs, gl: &mut GlGraphics) {
         let v = args.viewport();
         gl.draw(v, |_, gl| {
-            clear([0xFF as f32, 0xFF as f32, 0xFF as f32, 1.0], gl);
+            clear([0.8, 0.8, 0.8, 1.0], gl);
             self.view.render(gl);
         });
     }
