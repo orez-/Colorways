@@ -4,6 +4,7 @@ use sdl2_window::Sdl2Window;
 mod app;
 mod color;
 mod entity;
+mod line_of_sight;
 mod room;
 mod view;
 

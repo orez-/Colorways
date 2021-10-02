@@ -3,6 +3,7 @@ use opengl_graphics::GlGraphics;
 use opengl_graphics::Texture as GlTexture;
 use crate::entity::{Block, Entity, Lightbulb, LightSwitch, Player};
 use crate::color::Color;
+use geo::polygon;
 
 const ONE_START_MSG: &str = "level must have exactly one starting position";
 const LEVEL2: &[u8] = include_bytes!("../bin/levels/level3.skb");
@@ -47,6 +48,32 @@ impl Tile {
             Exit => true,
         }
     }
+
+    pub fn is_transparent(&self) -> bool {
+        // TODO: ᖍ(∙⟞∙)ᖌ
+        self.is_passable()
+    }
+}
+
+fn to_walls_polygon(tiles: &[Tile], width: usize) -> geo::MultiPolygon<f64> {
+    let mut polygons = Vec::new();
+    for (i, tile) in tiles.iter().enumerate() {
+        if !tile.is_transparent() {
+            let x = (i % width) as f64 * TILE_SIZE;
+            let y = (i / width) as f64 * TILE_SIZE;
+
+            polygons.push(polygon![
+                exterior: [
+                    (x: x, y: y),
+                    (x: x + TILE_SIZE, y: y),
+                    (x: x + TILE_SIZE, y: y + TILE_SIZE),
+                    (x: x, y: y + TILE_SIZE),
+                ],
+                interiors: [],
+            ]);
+        }
+    }
+    geo::MultiPolygon(polygons)
 }
 
 type Game = (Room, Player, Vec<Entity>);
@@ -55,6 +82,7 @@ pub struct Room {
     width: usize,
     height: usize,
     tiles: Vec<Tile>,
+    pub walls_polygon: geo::MultiPolygon<f64>,
 }
 
 impl Room {
@@ -69,6 +97,9 @@ impl Room {
                 (c != b'\n').then(|| Tile::from_chr(c as char))
             }).collect();
         let height = tiles.len() / width;
+
+        let walls_polygon = to_walls_polygon(&tiles, width);
+        let room = Room { width, height, tiles, walls_polygon };
 
         let mut x = 0;
         let mut y = 0;
@@ -85,9 +116,9 @@ impl Room {
                 'g' => { entities.push(Entity::Block(Block::new(x, y, Color::Green))); },
                 'b' => { entities.push(Entity::Block(Block::new(x, y, Color::Blue))); },
                 'w' => { entities.push(Entity::Block(Block::new(x, y, Color::White))); },
-                'R' => { entities.push(Entity::Lightbulb(Lightbulb::new(x, y, Color::Red))); },
-                'G' => { entities.push(Entity::Lightbulb(Lightbulb::new(x, y, Color::Green))); },
-                'B' => { entities.push(Entity::Lightbulb(Lightbulb::new(x, y, Color::Blue))); },
+                'R' => { entities.push(Entity::Lightbulb(Lightbulb::new(x, y, Color::Red, &room))); },
+                'G' => { entities.push(Entity::Lightbulb(Lightbulb::new(x, y, Color::Green, &room))); },
+                'B' => { entities.push(Entity::Lightbulb(Lightbulb::new(x, y, Color::Blue, &room))); },
                 '1' => { entities.push(Entity::LightSwitch(LightSwitch::new(x, y, Color::Red))); },
                 '2' => { entities.push(Entity::LightSwitch(LightSwitch::new(x, y, Color::Green))); },
                 '3' => { entities.push(Entity::LightSwitch(LightSwitch::new(x, y, Color::Blue))); },
@@ -100,8 +131,9 @@ impl Room {
             }
             x += 1;
         }
+
         (
-            Room { width, height, tiles },
+            room,
             player.expect(ONE_START_MSG),
             entities,
         )

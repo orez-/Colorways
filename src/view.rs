@@ -47,11 +47,6 @@ impl Direction {
     }
 }
 
-struct Light {
-    points: Vec<[f64; 2]>,
-    color: [f32; 4],
-}
-
 pub struct GameView {
     texture: GlTexture,
     player: Player,
@@ -94,45 +89,25 @@ impl GameView {
 
     fn render_lights(&self, gl: &mut GlGraphics, context: &Context) {
         let draw_type = DrawState::default().blend(Blend::Add);
-        let mut lights = Vec::new();
-        let px = 10.5;
-        let py = 13.5;
-        lights.push(
-            Light { points: vec![[0., (py - px) * 16.], [16. * px, 16. * py], [0., 16. * (py + px)]],
-                color: [0.0, 0.0, 1.0, 1.0] });
 
-        let px = 10.5;
-        let py = 17.5;
-        lights.push(
-            Light { points: vec![[0., (py - px) * 16.], [16. * px, 16. * py], [0., 16. * (py + px)]],
-                    color: [0.0, 1.0, 0.0, 1.0] });
-
-        let rx = 23. * 16.;
-        let px = 12.5;
-        let py = 13.5;
-        lights.push(
-            Light { points: vec![[rx, (py - px) * 16.], [16. * px, 16. * py], [rx, 16. * (py + px)]],
-                    color: [1.0, 0.0, 0.0, 1.0] });
-
-        let px = 12.5;
-        let py = 17.5;
-        lights.push(
-            Light { points: vec![[rx, (py - px) * 16.], [16. * px, 16. * py], [rx, 16. * (py + px)]],
-                    color: [0.0, 0.0, 1.0, 1.0] });
+        let lights: Vec<_> = self.entities.iter().filter_map(|e| {
+            if let Entity::Lightbulb(bulb) = e { Some(bulb) }
+            else { None }
+        }).collect();
 
         for light in &lights {
             let polygon = Polygon::new([0.3, 0.3, 0.3, 1.]);
             polygon.draw(
-                &light.points,
+                &light.light_polygon,
                 &DrawState::default(),
                 context.transform,
                 gl,
             );
         }
         for light in &lights {
-            let polygon = Polygon::new(light.color);
+            let polygon = Polygon::new(light.color.as_component());
             polygon.draw(
-                &light.points,
+                &light.light_polygon,
                 &draw_type,
                 context.transform,
                 gl,
