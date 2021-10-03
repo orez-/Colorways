@@ -1,12 +1,13 @@
-use piston_window::{Context, DrawState, Image};
 use opengl_graphics::GlGraphics;
 use opengl_graphics::Texture as GlTexture;
 use geo::polygon;
+use piston_window::{Context, DrawState, Graphics, Image};
+use graphics_buffer::RenderBuffer;
 use crate::entity::{Block, Entity, Lightbulb, LightSwitch, Player};
 use crate::color::Color;
 
 const ONE_START_MSG: &str = "level must have exactly one starting position";
-const LEVEL2: &[u8] = include_bytes!("../bin/levels/level3.skb");
+const LEVEL2: &[u8] = include_bytes!("../bin/levels/rave.skb");
 // const LEVEL2: &[u8] = include_bytes!("../bin/levels/playground.skb");
 const TILE_SIZE: f64 = 16.;
 const WALL: [f64; 4] = [32., 0., TILE_SIZE, TILE_SIZE];
@@ -141,10 +142,10 @@ impl Room {
     }
 
     pub fn render(&self,
-                  texture: &GlTexture,
+                  texture: &RenderBuffer,
                   draw_state: &DrawState,
                   context: &Context,
-                  gl: &mut GlGraphics) {
+                  gl: &mut impl Graphics<Texture=RenderBuffer>) {
         for (i, elem) in self.tiles.iter().enumerate() {
             let x = i % self.width;
             let y = i / self.width;

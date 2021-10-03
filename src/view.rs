@@ -1,9 +1,11 @@
+use graphics_buffer::RenderBuffer;
 use opengl_graphics::Filter;
 use opengl_graphics::GlGraphics;
 use opengl_graphics::Texture as GlTexture;
 use piston_window::{Button, Key};
-use piston_window::{Context, DrawState, UpdateArgs, Transformed};
+use piston_window::{Context, DrawState, Image, Polygon, Transformed, UpdateArgs, PistonWindow};
 use piston_window::draw_state::Blend;
+use sdl2_window::Sdl2Window;
 use crate::app::HeldKeys;
 use crate::color::Color;
 use crate::entity::{Entity, Player};
@@ -16,16 +18,15 @@ const DISPLAY_HEIGHT_HALF: i64 = DISPLAY_HEIGHT as i64 / 2;
 
 const TEXTURE: &[u8] = include_bytes!("../bin/spritesheet.png");
 
-fn load_texture() -> GlTexture {
+fn texture_settings() -> opengl_graphics::TextureSettings {
     let mut texture_settings = opengl_graphics::TextureSettings::new();
     texture_settings.set_mag(Filter::Nearest);
+    texture_settings
+}
 
-    let img = image::load_from_memory(TEXTURE).unwrap();
-    let img = match img {
-        image::DynamicImage::ImageRgba8(img) => img,
-        x => x.to_rgba8(),
-    };
-    GlTexture::from_image(&img, &texture_settings)
+fn load_texture() -> RenderBuffer {
+    let settings = texture_settings();
+    RenderBuffer::decode_from_bytes(TEXTURE).unwrap()
 }
 
 pub enum GameAction {
@@ -53,7 +54,9 @@ impl Direction {
 }
 
 pub struct GameView {
-    texture: GlTexture,
+    texture: RenderBuffer,
+    hate: Option<GlTexture>,
+
     player: Player,
     room: Room,
     entities: Vec<Entity>,
@@ -65,6 +68,7 @@ impl GameView {
         let (room, player, entities, light_color) = Room::new();
         let mut game = GameView {
             texture: load_texture(),
+            hate: None,
             player,
             room,
             entities,
@@ -86,6 +90,14 @@ impl GameView {
             .trans(-x + DISPLAY_WIDTH / 2., -y + DISPLAY_HEIGHT / 2.)
     }
 
+    fn camera_context2(&self) -> Context {
+        let (x, y) = self.camera();
+        let x = x as f64;
+        let y = y as f64;
+        Context::new()
+            .trans(-x + DISPLAY_WIDTH / 2., -y + DISPLAY_HEIGHT / 2.)
+    }
+
     // TODO: if the level's too small probably center it instead
     fn camera(&self) -> (i64, i64) {
         let (x, y) = self.player.center();
@@ -102,45 +114,60 @@ impl GameView {
             else { None }
         }).collect();
 
-        for light in &lights {
-            light.draw_light_base(context, gl);
-        }
+        // for light in &lights {
+        //     light.draw_light_base(context, gl);
+        // }
 
         for light in &lights {
             light.draw_light(context, gl);
         }
     }
 
-    pub fn render(&self, gl: &mut GlGraphics) {
+    pub fn render(&mut self, gl: &mut GlGraphics) {
         // Camera
+        let abs_context = self.absolute_context();
         let context = self.camera_context();
+        let context2 = self.camera_context2();
+        let no_context = Context::new();
 
-        // Lights
-        self.render_lights(gl, &context);
+        // println!("{:?}\n\n{:?}", no_context.transform, Context::new_abs(200., 200.).transform);
 
         // Action
+        let mut buffer = RenderBuffer::new(200, 200);
+        buffer.clear([0.3, 0.0, 0.3, 1.0]);
         self.room.render(
             &self.texture,
-            &DrawState::default().blend(Blend::Multiply),
-            &context,
-            gl,
+            &DrawState::default(),
+            &context2,
+            &mut buffer,
         );
 
         for entity in &self.entities {
             entity.sprite().draw(
                 &self.texture,
-                &DrawState::default().blend(Blend::Multiply),
-                context.transform,
-                gl,
+                &DrawState::default(),
+                context2.transform,
+                &mut buffer,
             );
         }
 
         self.player.sprite().draw(
             &self.texture,
-            &DrawState::default().blend(Blend::Multiply),
-            context.transform,
+            &DrawState::default(),
+            context2.transform,
+            &mut buffer,
+        );
+
+        self.hate = Some(GlTexture::from_image(&buffer, &texture_settings()));
+        Image::new().draw(
+            self.hate.as_ref().unwrap(),
+            &DrawState::default(),
+            abs_context.transform,
             gl,
         );
+
+        // Lights
+        self.render_lights(gl, &context);
     }
 
     pub fn update(&mut self, args: &UpdateArgs, held_keys: &HeldKeys) {

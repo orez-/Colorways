@@ -25,7 +25,7 @@ fn main() {
 
     while let Some(e) = window.next() {
         if let Some(ref args) = e.render_args() {
-            app.render(args, &mut gl);
+            app.render(args, &mut gl, &mut window);
         }
 
         if let Some(ref args) = e.update_args() {
