@@ -86,8 +86,8 @@ impl Lightbulb {
 
     pub fn draw_light(&self, context: &Context, gl: &mut GlGraphics) {
         self.draw_light_fan(
-            self.color.as_component(),
-            &DrawState::default().blend(Blend::Alpha),
+            self.color.as_light_component(),
+            &DrawState::default().blend(Blend::Multiply),
             context,
             gl,
         );

@@ -102,9 +102,9 @@ impl GameView {
             else { None }
         }).collect();
 
-        for light in &lights {
-            light.draw_light_base(context, gl);
-        }
+        // for light in &lights {
+        //     light.draw_light_base(context, gl);
+        // }
 
         for light in &lights {
             light.draw_light(context, gl);
@@ -115,13 +115,10 @@ impl GameView {
         // Camera
         let context = self.camera_context();
 
-        // Lights
-        self.render_lights(gl, &context);
-
         // Action
         self.room.render(
             &self.texture,
-            &DrawState::default().blend(Blend::Multiply),
+            &DrawState::default(),
             &context,
             gl,
         );
@@ -129,7 +126,7 @@ impl GameView {
         for entity in &self.entities {
             entity.sprite().draw(
                 &self.texture,
-                &DrawState::default().blend(Blend::Multiply),
+                &DrawState::default(),
                 context.transform,
                 gl,
             );
@@ -137,10 +134,13 @@ impl GameView {
 
         self.player.sprite().draw(
             &self.texture,
-            &DrawState::default().blend(Blend::Multiply),
+            &DrawState::default(),
             context.transform,
             gl,
         );
+
+        // Lights
+        self.render_lights(gl, &context);
     }
 
     pub fn update(&mut self, args: &UpdateArgs, held_keys: &HeldKeys) {
