@@ -19,7 +19,7 @@ pub struct Block {
     pub y: i32,
     state: State,
     facing: Direction,
-    color: Color,
+    pub color: Color,
 }
 
 impl Block {
@@ -65,6 +65,7 @@ impl Block {
     }
 
     pub fn is_approachable(&self, direction: &Direction, view: &GameView) -> bool {
+        if view.tile_in_light(self.x, self.y, &self.color) { return true; }
         let (nx, ny) = direction.from(self.x, self.y);
         view.tile_is_passable(nx, ny) && view.entity_at(nx, ny).is_none()
     }

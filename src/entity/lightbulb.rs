@@ -2,8 +2,6 @@ use opengl_graphics::GlGraphics;
 use piston_window::{Context, DrawState, Image, Polygon, UpdateArgs};
 use piston_window::draw_state::Blend;
 use crate::color::Color;
-use crate::room::Room;
-use crate::line_of_sight::{Visibility, line_of_sight};
 use crate::view::{Direction, GameAction, GameView};
 
 const TILE_SIZE: f64 = 16.;
@@ -39,9 +37,8 @@ pub struct Lightbulb {
 }
 
 impl Lightbulb {
-    pub fn new(x: i32, y: i32, color: Color, room: &Room) -> Self {
-        let Visibility { polygon_pts, .. } = line_of_sight(x, y, room);
-        Self { x, y, color, state: State::Off, light_polygon: polygon_pts }
+    pub fn new(x: i32, y: i32, color: Color, light_polygon: Vec<[f64; 2]>) -> Self {
+        Self { x, y, color, state: State::Off, light_polygon }
     }
 
     pub fn sprite(&self) -> Image {

@@ -2,8 +2,9 @@ use piston_window::{Context, DrawState, Image};
 use opengl_graphics::GlGraphics;
 use opengl_graphics::Texture as GlTexture;
 use geo::polygon;
-use crate::entity::{Block, Entity, Lightbulb, LightSwitch, Player};
 use crate::color::Color;
+use crate::entity::{Block, Entity, Lightbulb, LightSwitch, Player};
+use crate::line_of_sight::{line_of_sight, Visibility};
 
 const ONE_START_MSG: &str = "level must have exactly one starting position";
 const LEVEL2: &[u8] = include_bytes!("../bin/levels/level3.skb");
@@ -82,7 +83,7 @@ pub struct Room {
     width: usize,
     height: usize,
     tiles: Vec<Tile>,
-    pub walls_polygon: geo::MultiPolygon<f64>,
+    sees_color: Vec<[bool; 3]>
 }
 
 impl Room {
@@ -99,7 +100,7 @@ impl Room {
         let height = tiles.len() / width;
 
         let walls_polygon = to_walls_polygon(&tiles, width);
-        let room = Room { width, height, tiles, walls_polygon };
+        let mut sees_color = vec![[false, false, false]; tiles.len()];
 
         let mut x = 0;
         let mut y = 0;
@@ -116,9 +117,18 @@ impl Room {
                 'g' => { entities.push(Entity::Block(Block::new(x, y, Color::Green))); },
                 'b' => { entities.push(Entity::Block(Block::new(x, y, Color::Blue))); },
                 'w' => { entities.push(Entity::Block(Block::new(x, y, Color::White))); },
-                'R' => { entities.push(Entity::Lightbulb(Lightbulb::new(x, y, Color::Red, &room))); },
-                'G' => { entities.push(Entity::Lightbulb(Lightbulb::new(x, y, Color::Green, &room))); },
-                'B' => { entities.push(Entity::Lightbulb(Lightbulb::new(x, y, Color::Blue, &room))); },
+                'R' => {
+                    let Visibility { polygon_pts, .. } = line_of_sight(x, y, width, height, &walls_polygon);
+                    entities.push(Entity::Lightbulb(Lightbulb::new(x, y, Color::Red, polygon_pts)));
+                },
+                'G' => {
+                    let Visibility { polygon_pts, .. } = line_of_sight(x, y, width, height, &walls_polygon);
+                    entities.push(Entity::Lightbulb(Lightbulb::new(x, y, Color::Green, polygon_pts)));
+                },
+                'B' => {
+                    let Visibility { polygon_pts, .. } = line_of_sight(x, y, width, height, &walls_polygon);
+                    entities.push(Entity::Lightbulb(Lightbulb::new(x, y, Color::Blue, polygon_pts)));
+                },
                 '1' => { entities.push(Entity::LightSwitch(LightSwitch::new(x, y, Color::Red))); },
                 '2' => { entities.push(Entity::LightSwitch(LightSwitch::new(x, y, Color::Green))); },
                 '3' => { entities.push(Entity::LightSwitch(LightSwitch::new(x, y, Color::Blue))); },
@@ -133,7 +143,7 @@ impl Room {
         }
 
         (
-            room,
+            Room { width, height, tiles, sees_color },
             player.expect(ONE_START_MSG),
             entities,
             Color::Green,
@@ -157,6 +167,18 @@ impl Room {
         if x < 0 || y < 0 { return None; }
         let idx = self.width * (y as usize) + x as usize;
         self.tiles.get(idx).cloned()
+    }
+
+    pub fn tile_in_light(&self, x: i32, y: i32, color: &Color) -> bool {
+        let cidx = match color {
+            Color::Red => 0,
+            Color::Green => 1,
+            Color::Blue => 2,
+            _ => { return false; },
+        };
+        if x < 0 || y < 0 { return false; }
+        let idx = self.width * (y as usize) + x as usize;
+        self.sees_color.get(idx).map_or(false, |&arr| arr[cidx])
     }
 
     pub fn pixel_width(&self) -> i64 {

@@ -163,7 +163,12 @@ impl GameView {
                 if self.player.can_walk() && self.tile_is_passable(nx, ny) {
                     if let Some(entity_id) = self.entity_at(nx, ny) {
                         if self.entities[entity_id].is_approachable(&direction, self) {
-                            action = self.entities[entity_id].on_approach(&direction);
+                            // borrow checker shenanigans
+                            match &self.entities[entity_id] {
+                                Entity::Block(block)
+                                if self.tile_in_light(block.x, block.y, &block.color) => (),
+                                _ => { action = self.entities[entity_id].on_approach(&direction); },
+                            }
                             self.player.walk(&direction);
                         }
                     }
@@ -194,6 +199,10 @@ impl GameView {
     pub fn tile_is_passable(&self, x: i32, y: i32) -> bool {
         let tile = self.room.tile_at(x, y);
         tile.map_or(false, |tile| tile.is_passable())
+    }
+
+    pub fn tile_in_light(&self, x: i32, y: i32, color: &Color) -> bool {
+        color == &self.light_color && self.room.tile_in_light(x, y, color)
     }
 
     pub fn entity_at(&self, x: i32, y: i32) -> Option<usize> {
