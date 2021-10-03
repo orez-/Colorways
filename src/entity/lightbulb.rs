@@ -1,3 +1,4 @@
+use graphics_buffer::RenderBuffer;
 use opengl_graphics::GlGraphics;
 use piston_window::{Context, DrawState, Image, Polygon, UpdateArgs};
 use piston_window::draw_state::Blend;
@@ -32,7 +33,7 @@ pub struct Lightbulb {
 impl Lightbulb {
     pub fn new(x: i32, y: i32, color: Color, room: &Room) -> Self {
         let Visibility { polygon_pts, .. } = line_of_sight(x, y, room);
-        Self { x, y, color, state: State::Off, light_polygon: polygon_pts }
+        Self { x, y, color, state: State::On, light_polygon: polygon_pts }
     }
 
     pub fn sprite(&self) -> Image {
@@ -75,7 +76,7 @@ impl Lightbulb {
     }
     pub fn on_approach(&mut self, _direction: &Direction) -> Option<GameAction> { None }
 
-    pub fn draw_light_base(&self, context: &Context, gl: &mut GlGraphics) {
+    pub fn draw_light_base(&self, context: &Context, gl: &mut RenderBuffer) {
         self.draw_light_fan(
             [0.3, 0.3, 0.3, 1.],
             &DrawState::default(),
@@ -84,21 +85,21 @@ impl Lightbulb {
         );
     }
 
-    pub fn draw_light(&self, context: &Context, gl: &mut GlGraphics) {
+    pub fn draw_light(&self, context: &Context, gl: &mut RenderBuffer) {
         self.draw_light_fan(
             self.color.as_component(),
-            &DrawState::default().blend(Blend::Alpha),
+            &DrawState::default().blend(Blend::Add),
             context,
             gl,
         );
     }
 
     pub fn turn_on(&mut self) {
-        self.state = State::Rising(0.);
+        // self.state = State::Rising(0.);
     }
 
     pub fn turn_off(&mut self) {
-        self.state = State::Falling(0.);
+        // self.state = State::Falling(0.);
     }
 
     fn light_alpha(&self) -> f32 {
@@ -110,7 +111,7 @@ impl Lightbulb {
         }
     }
 
-    fn draw_light_fan(&self, mut color: [f32; 4], state: &DrawState, context: &Context, gl: &mut GlGraphics) {
+    fn draw_light_fan(&self, mut color: [f32; 4], state: &DrawState, context: &Context, gl: &mut RenderBuffer) {
         if matches!(self.state, State::Off) { return; }
         color[3] = self.light_alpha();
         // Need to triangulate the polygon: opengl doesn't draw concave polygons.

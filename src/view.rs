@@ -24,9 +24,14 @@ fn texture_settings() -> opengl_graphics::TextureSettings {
     texture_settings
 }
 
-fn load_texture() -> RenderBuffer {
+fn load_texture() -> GlTexture {
     let settings = texture_settings();
-    RenderBuffer::decode_from_bytes(TEXTURE).unwrap()
+    let img = image::load_from_memory(TEXTURE).unwrap();
+    let img = match img {
+        image::DynamicImage::ImageRgba8(img) => img,
+        x => x.to_rgba8(),
+    };
+    GlTexture::from_image(&img, &settings)
 }
 
 pub enum GameAction {
@@ -54,7 +59,7 @@ impl Direction {
 }
 
 pub struct GameView {
-    texture: RenderBuffer,
+    texture: GlTexture,
     hate: Option<GlTexture>,
 
     player: Player,
@@ -108,7 +113,10 @@ impl GameView {
         (xs[1], ys[1])
     }
 
-    fn render_lights(&self, gl: &mut GlGraphics, context: &Context) {
+    fn render_lights(&mut self, gl: &mut GlGraphics, context: &Context) {
+        let mut buffer = RenderBuffer::new(200, 200);
+        buffer.clear([0.6, 0.6, 0.6, 1.0]);
+
         let lights: Vec<_> = self.entities.iter().filter_map(|e| {
             if let Entity::Lightbulb(bulb) = e { Some(bulb) }
             else { None }
@@ -119,55 +127,48 @@ impl GameView {
         // }
 
         for light in &lights {
-            light.draw_light(context, gl);
+            light.draw_light(context, &mut buffer);
         }
+        self.hate = Some(GlTexture::from_image(&buffer, &texture_settings()));
+        Image::new().draw(
+            self.hate.as_ref().unwrap(),
+            &DrawState::default().blend(Blend::Multiply),
+            self.absolute_context().transform,
+            gl,
+        );
     }
 
     pub fn render(&mut self, gl: &mut GlGraphics) {
         // Camera
-        let abs_context = self.absolute_context();
         let context = self.camera_context();
         let context2 = self.camera_context2();
-        let no_context = Context::new();
-
-        // println!("{:?}\n\n{:?}", no_context.transform, Context::new_abs(200., 200.).transform);
 
         // Action
-        let mut buffer = RenderBuffer::new(200, 200);
-        buffer.clear([0.3, 0.0, 0.3, 1.0]);
         self.room.render(
             &self.texture,
             &DrawState::default(),
-            &context2,
-            &mut buffer,
+            &context,
+            gl,
         );
 
         for entity in &self.entities {
             entity.sprite().draw(
                 &self.texture,
                 &DrawState::default(),
-                context2.transform,
-                &mut buffer,
+                context.transform,
+                gl,
             );
         }
 
         self.player.sprite().draw(
             &self.texture,
             &DrawState::default(),
-            context2.transform,
-            &mut buffer,
-        );
-
-        self.hate = Some(GlTexture::from_image(&buffer, &texture_settings()));
-        Image::new().draw(
-            self.hate.as_ref().unwrap(),
-            &DrawState::default(),
-            abs_context.transform,
+            context.transform,
             gl,
         );
 
         // Lights
-        self.render_lights(gl, &context);
+        self.render_lights(gl, &context2);
     }
 
     pub fn update(&mut self, args: &UpdateArgs, held_keys: &HeldKeys) {

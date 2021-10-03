@@ -1,8 +1,7 @@
 use std::collections::HashSet;
 use crate::view::GameView;
-use piston_window::{clear, Button, RenderArgs, UpdateArgs, PistonWindow};
+use piston_window::{clear, Button, RenderArgs, UpdateArgs};
 use opengl_graphics::GlGraphics;
-use sdl2_window::Sdl2Window;
 
 const AMBIENT_LUM: f32 = 0.6;
 
@@ -19,7 +18,7 @@ impl App {
         }
     }
 
-    pub fn render(&mut self, args: &RenderArgs, gl: &mut GlGraphics, window: &mut PistonWindow<Sdl2Window>) {
+    pub fn render(&mut self, args: &RenderArgs, gl: &mut GlGraphics) {
         let v = args.viewport();
         gl.draw(v, |_, gl| {
             clear([AMBIENT_LUM, AMBIENT_LUM, AMBIENT_LUM, 1.0], gl);
