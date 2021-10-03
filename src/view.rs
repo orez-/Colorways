@@ -28,6 +28,10 @@ fn load_texture() -> GlTexture {
     GlTexture::from_image(&img, &texture_settings)
 }
 
+pub enum GameAction {
+    ColorChange(Color),
+}
+
 #[derive(Clone)]
 pub enum Direction {
     North,
@@ -144,6 +148,7 @@ impl GameView {
         for entity in self.entities.iter_mut() {
             entity.update(args);
         }
+        let mut action = None;  // TODO: should probably be a vec? eh.
         for key in held_keys.iter() {
             let maybe_direction = match key {
                 Button::Keyboard(Key::W) => Some(North),
@@ -158,7 +163,7 @@ impl GameView {
                 if self.player.can_walk() && self.tile_is_passable(nx, ny) {
                     if let Some(entity_id) = self.entity_at(nx, ny) {
                         if self.entities[entity_id].is_approachable(&direction, self) {
-                            self.entities[entity_id].on_approach(&direction);
+                            action = self.entities[entity_id].on_approach(&direction);
                             self.player.walk(&direction);
                         }
                     }
@@ -166,6 +171,11 @@ impl GameView {
                         self.player.walk(&direction);
                     }
                 }
+            }
+        }
+        if let Some(action) = action {
+            match action {
+                GameAction::ColorChange(color) => { self.set_light_color(color); },
             }
         }
     }
@@ -178,6 +188,7 @@ impl GameView {
                 else if bulb.color == color { bulb.turn_on(); }
             }
         }
+        self.light_color = color;
     }
 
     pub fn tile_is_passable(&self, x: i32, y: i32) -> bool {

@@ -1,6 +1,6 @@
 use piston_window::{Image, UpdateArgs};
 use crate::color::Color;
-use crate::view::{Direction, GameView};
+use crate::view::{Direction, GameAction, GameView};
 
 const TILE_SIZE: f64 = 16.;
 const BLOCK_OFFSET_Y: f64 = 8.;
@@ -69,8 +69,9 @@ impl Block {
         view.tile_is_passable(nx, ny) && view.entity_at(nx, ny).is_none()
     }
 
-    pub fn on_approach(&mut self, direction: &Direction) {
+    pub fn on_approach(&mut self, direction: &Direction) -> Option<GameAction> {
         self.push(direction);
+        None
     }
 
     fn push(&mut self, direction: &Direction) {

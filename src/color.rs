@@ -6,7 +6,7 @@ const GREEN: ComponentColor = [0., 1., 0., 1.];
 const BLUE: ComponentColor = [0., 0., 1., 1.];
 const WHITE: ComponentColor = [1., 1., 1., 1.];
 
-#[derive(PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 pub enum Color {
     Gray,
     Red,

@@ -4,7 +4,7 @@ use piston_window::draw_state::Blend;
 use crate::color::Color;
 use crate::room::Room;
 use crate::line_of_sight::{Visibility, line_of_sight};
-use crate::view::{Direction, GameView};
+use crate::view::{Direction, GameAction, GameView};
 
 const TILE_SIZE: f64 = 16.;
 const LIGHTBULB_ON: [f64; 4] = [16., 16., TILE_SIZE, TILE_SIZE];
@@ -73,7 +73,7 @@ impl Lightbulb {
     pub fn is_approachable(&self, _direction: &Direction, _game: &GameView) -> bool {
         false
     }
-    pub fn on_approach(&mut self, _direction: &Direction) { }
+    pub fn on_approach(&mut self, _direction: &Direction) -> Option<GameAction> { None }
 
     pub fn draw_light_base(&self, context: &Context, gl: &mut GlGraphics) {
         self.draw_light_fan(

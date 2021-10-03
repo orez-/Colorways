@@ -1,5 +1,5 @@
 use piston_window::{Image, UpdateArgs};
-use crate::view::{GameView, Direction};
+use crate::view::{Direction, GameAction, GameView};
 use crate::entity;
 
 // The boilerplatenest file. Try to stay out of here as much as possible.
@@ -35,7 +35,7 @@ impl Entity {
         }
     }
 
-    pub fn on_approach(&mut self, direction: &Direction) {
+    pub fn on_approach(&mut self, direction: &Direction) -> Option<GameAction> {
         match self {
             Block(e) => e.on_approach(direction),
             Lightbulb(e) => e.on_approach(direction),
