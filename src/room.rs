@@ -118,15 +118,24 @@ impl Room {
                 'b' => { entities.push(Entity::Block(Block::new(x, y, Color::Blue))); },
                 'w' => { entities.push(Entity::Block(Block::new(x, y, Color::White))); },
                 'R' => {
-                    let Visibility { polygon_pts, .. } = line_of_sight(x, y, width, height, &walls_polygon);
+                    let Visibility { polygon_pts, tiles } = line_of_sight(x, y, width, height, &walls_polygon);
+                    for idx in tiles {
+                        sees_color[idx][0] = true;
+                    }
                     entities.push(Entity::Lightbulb(Lightbulb::new(x, y, Color::Red, polygon_pts)));
                 },
                 'G' => {
-                    let Visibility { polygon_pts, .. } = line_of_sight(x, y, width, height, &walls_polygon);
+                    let Visibility { polygon_pts, tiles } = line_of_sight(x, y, width, height, &walls_polygon);
+                    for idx in tiles {
+                        sees_color[idx][1] = true;
+                    }
                     entities.push(Entity::Lightbulb(Lightbulb::new(x, y, Color::Green, polygon_pts)));
                 },
                 'B' => {
-                    let Visibility { polygon_pts, .. } = line_of_sight(x, y, width, height, &walls_polygon);
+                    let Visibility { polygon_pts, tiles } = line_of_sight(x, y, width, height, &walls_polygon);
+                    for idx in tiles {
+                        sees_color[idx][2] = true;
+                    }
                     entities.push(Entity::Lightbulb(Lightbulb::new(x, y, Color::Blue, polygon_pts)));
                 },
                 '1' => { entities.push(Entity::LightSwitch(LightSwitch::new(x, y, Color::Red))); },
