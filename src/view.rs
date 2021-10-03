@@ -5,6 +5,7 @@ use piston_window::{Button, Key};
 use piston_window::{Context, DrawState, UpdateArgs, Transformed, Polygon};
 use piston_window::draw_state::Blend;
 use crate::app::HeldKeys;
+use crate::color::Color;
 use crate::entity::{Entity, Player};
 use crate::room::Room;
 
@@ -52,17 +53,21 @@ pub struct GameView {
     player: Player,
     room: Room,
     entities: Vec<Entity>,
+    light_color: Color,
 }
 
 impl GameView {
     pub fn new() -> Self {
-        let (room, player, entities) = Room::new();
-        GameView {
+        let (room, player, entities, light_color) = Room::new();
+        let mut game = GameView {
             texture: load_texture(),
             player,
             room,
             entities,
-        }
+            light_color: Color::Gray,
+        };
+        game.set_light_color(Color::Green);
+        game
     }
 
     fn absolute_context(&self) -> Context {
@@ -161,6 +166,16 @@ impl GameView {
                         self.player.walk(&direction);
                     }
                 }
+            }
+        }
+    }
+
+    pub fn set_light_color(&mut self, color: Color) {
+        if self.light_color == color { return; }
+        for entity in self.entities.iter_mut() {
+            if let Entity::Lightbulb(bulb) = entity {
+                if bulb.color == self.light_color { bulb.turn_off(); }
+                else if bulb.color == color { bulb.turn_on(); }
             }
         }
     }

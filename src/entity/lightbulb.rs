@@ -32,7 +32,7 @@ pub struct Lightbulb {
 impl Lightbulb {
     pub fn new(x: i32, y: i32, color: Color, room: &Room) -> Self {
         let Visibility { polygon_pts, .. } = line_of_sight(x, y, room);
-        Self { x, y, color, state: State::Rising(0.), light_polygon: polygon_pts }
+        Self { x, y, color, state: State::Off, light_polygon: polygon_pts }
     }
 
     pub fn sprite(&self) -> Image {
@@ -42,10 +42,10 @@ impl Lightbulb {
             State::Rising(p) if p <= 0.2 => { LIGHTBULB_OFF },
             State::Rising(p) if p <= 0.5 => { LIGHTBULB_RISING_1 },
             State::Rising(p) if p <= 0.8 => { LIGHTBULB_RISING_2 },
-            State::Rising(p) => { LIGHTBULB_ON },
+            State::Rising(_) => { LIGHTBULB_ON },
             State::Falling(p) if p <= 0.2 => { LIGHTBULB_FALLING_1 },
             State::Falling(p) if p <= 0.4 => { LIGHTBULB_FALLING_2 },
-            State::Falling(p) => { LIGHTBULB_OFF },
+            State::Falling(_) => { LIGHTBULB_OFF },
         };
         let x = self.x as f64 * TILE_SIZE;
         let y = self.y as f64 * TILE_SIZE;
@@ -59,12 +59,12 @@ impl Lightbulb {
             State::On | State::Off => (),
             State::Rising(p) => {
                 let p2 = p + args.dt * 5.;
-                if p2 >= 1. { self.state = State::Falling(0.); }
+                if p2 >= 1. { self.state = State::On; }
                 else { self.state = State::Rising(p2); }
             },
             State::Falling(p) => {
                 let p2 = p + args.dt * 5.;
-                if p2 >= 1. { self.state = State::Rising(0.); }
+                if p2 >= 1. { self.state = State::Off; }
                 else { self.state = State::Falling(p2); }
             },
         }
@@ -91,6 +91,14 @@ impl Lightbulb {
             context,
             gl,
         );
+    }
+
+    pub fn turn_on(&mut self) {
+        self.state = State::Rising(0.);
+    }
+
+    pub fn turn_off(&mut self) {
+        self.state = State::Falling(0.);
     }
 
     fn light_alpha(&self) -> f32 {
