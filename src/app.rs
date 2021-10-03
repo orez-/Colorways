@@ -3,6 +3,8 @@ use crate::view::GameView;
 use piston_window::{clear, Button, RenderArgs, UpdateArgs};
 use opengl_graphics::GlGraphics;
 
+const AMBIENT_LUM: f32 = 0.6;
+
 pub struct App {
     view: GameView,
     held_keys: HeldKeys,
@@ -19,7 +21,7 @@ impl App {
     pub fn render(&mut self, args: &RenderArgs, gl: &mut GlGraphics) {
         let v = args.viewport();
         gl.draw(v, |_, gl| {
-            clear([0.8, 0.8, 0.8, 1.0], gl);
+            clear([AMBIENT_LUM, AMBIENT_LUM, AMBIENT_LUM, 1.0], gl);
             self.view.render(gl);
         });
     }

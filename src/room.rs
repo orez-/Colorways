@@ -3,6 +3,7 @@ use bitmask_enum::bitmask;
 use piston_window::{Context, DrawState, Image};
 use opengl_graphics::GlGraphics;
 use opengl_graphics::Texture as GlTexture;
+use geo::polygon;
 use crate::entity::{Block, Entity, Lightbulb, LightSwitch, Player};
 use crate::color::Color;
 
@@ -86,76 +87,22 @@ fn to_polygon(exterior: Vec<(usize, usize)>, interior: Vec<Vec<(usize, usize)>>)
 }
 
 fn to_walls_polygon(tiles: &[Tile], width: usize) -> geo::MultiPolygon<f64> {
-    let mut connections: HashMap<(usize, usize), SquareEdge> = HashMap::new();
+    let mut polygons = Vec::new();
     for (i, tile) in tiles.iter().enumerate() {
         if !tile.is_transparent() {
-            let x = i % width;
-            let y = i / width;
+            let x = (i % width) as f64 * TILE_SIZE;
+            let y = (i / width) as f64 * TILE_SIZE;
 
-            match connections.get_mut(&(x + 1, y)) {
-                Some(value) if (*value).contains(SquareEdge::Left) => { *value &= !SquareEdge::Left; },
-                _ => { *connections.entry((x, y)).or_insert_with(SquareEdge::none) |= SquareEdge::Right; },
-            }
-            match connections.get_mut(&(x + 1, y + 1)) {
-                Some(value) if (*value).contains(SquareEdge::Up) => { *value &= !SquareEdge::Up; },
-                _ => { *connections.entry((x + 1, y)).or_insert_with(SquareEdge::none) |= SquareEdge::Down; },
-            }
-            match connections.get_mut(&(x, y + 1)) {
-                Some(value) if (*value).contains(SquareEdge::Right) => { *value &= !SquareEdge::Right; },
-                _ => { *connections.entry((x + 1, y + 1)).or_insert_with(SquareEdge::none) |= SquareEdge::Left; },
-            }
-            match connections.get_mut(&(x, y)) {
-                Some(value) if (*value).contains(SquareEdge::Down) => { *value &= !SquareEdge::Down; },
-                _ => { *connections.entry((x, y + 1)).or_insert_with(SquareEdge::none) |= SquareEdge::Up; },
-            }
+            polygons.push(polygon![
+                exterior: [
+                    (x: x, y: y),
+                    (x: x + TILE_SIZE, y: y),
+                    (x: x + TILE_SIZE, y: y + TILE_SIZE),
+                    (x: x, y: y + TILE_SIZE),
+                ],
+                interiors: [],
+            ]);
         }
-    }
-
-    for (k, v) in &connections {
-        match *v {
-            SquareEdge::Up | SquareEdge::Right | SquareEdge::Down | SquareEdge::Left | SquareEdge(0) => (),
-            v => { println!("{:?} => {:?}", k, v); }
-        }
-    }
-
-    // XXX: THIS BREAKS WHEN TWO BLOCKS ARE CATTY-CORNER
-    // .#
-    // #.
-    let mut paths: Vec<Vec<(usize, usize)>> = Vec::new();
-    while let Some(((x0, y0), d)) = pop(&mut connections) {
-        if d.is_none() { continue; }
-        let mut x = x0;
-        let mut y = y0;
-        let mut d = d;
-        let mut path = Vec::new();
-        while {  // ahh, the ol' Rust do-while
-            path.push((x, y));
-            match d {
-                SquareEdge::Up => y -= 1,
-                SquareEdge::Right => x += 1,
-                SquareEdge::Down => y += 1,
-                SquareEdge::Left => x -= 1,
-                SquareEdge(0) => panic!("no exits! ack!"),
-                // TODO: catty-corner.
-                // Possible we can resolve this arbitrarily (depends on visibility algo),
-                // but "always turn right" strat should be safest. Results in simple polygons.
-                // (On first corner we can definitely pick arbitrarily)
-                e => panic!("multiple exits! catty-corner? {:?}", e),
-            }
-            (x, y) != (x0, y0)
-        } { d = connections.remove(&(x, y)).unwrap(); }
-        paths.push(path);
-    }
-    // println!("{:?} {:?}", paths.len(), paths.iter().map(|v| v.len()).collect::<Vec<_>>());
-
-    // XXX: yoof.
-    let lorg = paths.swap_remove(paths.iter().position(|path| path.len() == 154).unwrap());
-    let smol = paths.swap_remove(paths.iter().position(|path| path.len() == 122).unwrap());
-
-    let mut polygons = Vec::new();
-    polygons.push(to_polygon(lorg, vec![smol]));
-    for path in paths {
-        polygons.push(to_polygon(path, Vec::new()));
     }
     geo::MultiPolygon(polygons)
 }

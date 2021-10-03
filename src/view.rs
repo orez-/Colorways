@@ -96,22 +96,11 @@ impl GameView {
         }).collect();
 
         for light in &lights {
-            let polygon = Polygon::new([0.3, 0.3, 0.3, 1.]);
-            polygon.draw(
-                &light.light_polygon,
-                &DrawState::default(),
-                context.transform,
-                gl,
-            );
+            light.draw_light([0.3, 0.3, 0.3, 1.], &DrawState::default(), context, gl);
         }
+
         for light in &lights {
-            let polygon = Polygon::new(light.color.as_component());
-            polygon.draw(
-                &light.light_polygon,
-                &draw_type,
-                context.transform,
-                gl,
-            );
+            light.draw_light(light.color.as_component(), &draw_type, context, gl);
         }
     }
 

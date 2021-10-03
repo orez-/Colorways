@@ -1,4 +1,5 @@
-use piston_window::{Image, UpdateArgs};
+use opengl_graphics::GlGraphics;
+use piston_window::{Context, DrawState, Image, Polygon, UpdateArgs};
 use crate::color::Color;
 use crate::room::Room;
 use crate::line_of_sight::{Visibility, line_of_sight};
@@ -11,7 +12,7 @@ pub struct Lightbulb {
     pub x: i32,
     pub y: i32,
     pub color: Color,
-    pub light_polygon: Vec<[f64; 2]>,
+    light_polygon: Vec<[f64; 2]>,
 }
 
 impl Lightbulb {
@@ -33,4 +34,20 @@ impl Lightbulb {
         false
     }
     pub fn on_approach(&mut self, _direction: &Direction) { }
+
+    pub fn draw_light(&self, color: [f32; 4], state: &DrawState, context: &Context, gl: &mut GlGraphics) {
+        // Need to triangulate the polygon: opengl doesn't draw concave polygons.
+        // Fortunately we axiomatically have a point that can see all vertexes: the sprite center.
+        // TODO: look into how to accomplish a "fan"
+        let center = [(self.x as f64 + 0.5) * TILE_SIZE, (self.y as f64 + 0.5) * TILE_SIZE];
+        let polygon = Polygon::new(color);
+        for v in self.light_polygon.windows(2) {
+            polygon.draw(
+                &[v[0], v[1], center],
+                state,
+                context.transform,
+                gl,
+            );
+        }
+    }
 }
