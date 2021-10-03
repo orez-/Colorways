@@ -88,19 +88,17 @@ impl GameView {
     }
 
     fn render_lights(&self, gl: &mut GlGraphics, context: &Context) {
-        let draw_type = DrawState::default().blend(Blend::Add);
-
         let lights: Vec<_> = self.entities.iter().filter_map(|e| {
             if let Entity::Lightbulb(bulb) = e { Some(bulb) }
             else { None }
         }).collect();
 
         for light in &lights {
-            light.draw_light([0.3, 0.3, 0.3, 1.], &DrawState::default(), context, gl);
+            light.draw_light_base(context, gl);
         }
 
         for light in &lights {
-            light.draw_light(light.color.as_component(), &draw_type, context, gl);
+            light.draw_light(context, gl);
         }
     }
 

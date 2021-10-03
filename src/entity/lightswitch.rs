@@ -3,7 +3,7 @@ use crate::color::Color;
 use crate::view::{Direction, GameView};
 
 const TILE_SIZE: f64 = 16.;
-const LIGHTBULB: [f64; 4] = [16., 32., TILE_SIZE, TILE_SIZE];
+const LIGHTSWITCH: [f64; 4] = [48., 0., TILE_SIZE, TILE_SIZE];
 
 pub struct LightSwitch {
     pub x: i32,
@@ -20,7 +20,7 @@ impl LightSwitch {
         let x = self.x as f64 * TILE_SIZE;
         let y = self.y as f64 * TILE_SIZE;
         Image::new_color(self.color.as_component())
-            .src_rect(LIGHTBULB)
+            .src_rect(LIGHTSWITCH)
             .rect([x, y, TILE_SIZE, TILE_SIZE])
     }
 
