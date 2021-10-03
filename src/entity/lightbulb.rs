@@ -14,6 +14,15 @@ const LIGHTBULB_FALLING_1: [f64; 4] = [32., 32., TILE_SIZE, TILE_SIZE];
 const LIGHTBULB_FALLING_2: [f64; 4] = [32., 48., TILE_SIZE, TILE_SIZE];
 const LIGHTBULB_OFF: [f64; 4] = [16., 64., TILE_SIZE, TILE_SIZE];
 
+fn lerp(left: [f32; 4], right: [f32; 4], p: f32) -> [f32; 4] {
+    [
+        (right[0] - left[0]) * p + left[0],
+        (right[1] - left[1]) * p + left[1],
+        (right[2] - left[2]) * p + left[2],
+        (right[3] - left[3]) * p + left[3],
+    ]
+}
+
 enum State {
     On,
     Rising(f64),
@@ -110,9 +119,9 @@ impl Lightbulb {
         }
     }
 
-    fn draw_light_fan(&self, mut color: [f32; 4], state: &DrawState, context: &Context, gl: &mut GlGraphics) {
+    fn draw_light_fan(&self, color: [f32; 4], state: &DrawState, context: &Context, gl: &mut GlGraphics) {
         if matches!(self.state, State::Off) { return; }
-        color[3] = self.light_alpha();
+        let color = lerp([1., 1., 1., 1.], color, self.light_alpha());
         // Need to triangulate the polygon: opengl doesn't draw concave polygons.
         // Fortunately we axiomatically have a point that can see all vertexes: the sprite center.
         // TODO: look into how to accomplish a "fan"
