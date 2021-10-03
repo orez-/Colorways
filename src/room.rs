@@ -1,5 +1,3 @@
-use std::collections::HashMap;
-use bitmask_enum::bitmask;
 use piston_window::{Context, DrawState, Image};
 use opengl_graphics::GlGraphics;
 use opengl_graphics::Texture as GlTexture;
@@ -55,35 +53,6 @@ impl Tile {
         // TODO: ᖍ(∙⟞∙)ᖌ
         self.is_passable()
     }
-}
-
-// square is on the right_ of the line
-// ^->
-// |#|
-// <-v
-#[bitmask(u8)]
-enum SquareEdge {
-    Up,
-    Right,
-    Down,
-    Left,
-}
-
-fn pop<K, V>(map: &mut HashMap<K, V>) -> Option<(K, V)>
-where K: Eq + std::hash::Hash + Clone,
-{
-    let k = map.keys().next()?.clone();
-    map.remove_entry(&k)
-}
-
-fn to_linestring(cs: Vec<(usize, usize)>) -> geo::LineString<f64> {
-    geo::LineString::from(cs.into_iter().map(|(x, y)| [x as f64 * TILE_SIZE, y as f64 * TILE_SIZE]).collect::<Vec<_>>())
-}
-
-fn to_polygon(exterior: Vec<(usize, usize)>, interior: Vec<Vec<(usize, usize)>>) -> geo::Polygon<f64> {
-    let exterior = to_linestring(exterior);
-    let interior = interior.into_iter().map(to_linestring).collect();
-    geo::Polygon::new(exterior, interior)
 }
 
 fn to_walls_polygon(tiles: &[Tile], width: usize) -> geo::MultiPolygon<f64> {

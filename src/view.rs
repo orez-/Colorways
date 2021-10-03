@@ -2,7 +2,7 @@ use opengl_graphics::Filter;
 use opengl_graphics::GlGraphics;
 use opengl_graphics::Texture as GlTexture;
 use piston_window::{Button, Key};
-use piston_window::{Context, DrawState, UpdateArgs, Transformed, Polygon};
+use piston_window::{Context, DrawState, UpdateArgs, Transformed};
 use piston_window::draw_state::Blend;
 use crate::app::HeldKeys;
 use crate::color::Color;
@@ -70,7 +70,7 @@ impl GameView {
             entities,
             light_color: Color::Gray,
         };
-        game.set_light_color(Color::Green);
+        game.set_light_color(light_color);
         game
     }
 
