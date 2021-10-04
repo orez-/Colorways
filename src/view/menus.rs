@@ -3,7 +3,7 @@ use crate::entity::Player;
 use crate::view::Transition;
 use opengl_graphics::GlGraphics;
 use opengl_graphics::Texture as GlTexture;
-use piston_window::{Context, DrawState, Rectangle, Transformed, UpdateArgs};
+use piston_window::{Context, DrawState, Image, Rectangle, Transformed, UpdateArgs};
 use piston_window::rectangle::rectangle_by_corners;
 
 const DISPLAY_WIDTH: f64 = 200.;
@@ -20,16 +20,18 @@ pub const LEVEL_SPACING_Y: f64 = LEVEL_HEIGHT + LEVEL_PADDING;
 
 pub struct MenuView {
     texture: GlTexture,
+    completed_levels: Vec<usize>,
     cursor: Player,
 }
 
 impl MenuView {
-    pub fn new(level: usize) -> Self {
+    pub fn new(level: usize, completed_levels: Vec<usize>) -> Self {
         let x = level % LEVELS_HORIZONTAL;
         let y = level / LEVELS_HORIZONTAL;
         Self {
             texture: crate::app::load_texture(),
             cursor: Player::new_cursor(x as i32, y as i32, LEVEL_SPACING_X, LEVEL_SPACING_Y),
+            completed_levels,
         }
     }
 
@@ -49,6 +51,22 @@ impl MenuView {
                     gl,
                 );
             }
+        }
+
+        for idx in &self.completed_levels {
+            let x = idx % LEVELS_HORIZONTAL;
+            let y = idx / LEVELS_HORIZONTAL;
+            let left = LEVEL_OFFSET_X + x as f64 * LEVEL_SPACING_X + 20.;
+            let top = LEVEL_OFFSET_Y + y as f64 * LEVEL_SPACING_Y - 5.;
+            Image::new()
+                .src_rect([32., 64., 16., 16.])
+                .rect([left, top, 16., 16.])
+                .draw(
+                    &self.texture,
+                    &DrawState::default(),
+                    context.transform,
+                    gl,
+                );
         }
 
         self.cursor.sprite().draw(

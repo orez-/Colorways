@@ -223,7 +223,10 @@ impl GameView {
         if let Some(action) = action {
             match action {
                 GameAction::ColorChange(color) => { self.set_light_color(color); },
-                GameAction::Win => { self.state = State::Win(0.); },
+                GameAction::Win => {
+                    self.state = State::Win(0.);
+                    return Some(Transition::Win(self.level_id));
+                },
             }
         }
         None

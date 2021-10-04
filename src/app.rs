@@ -1,3 +1,4 @@
+use std::collections::HashSet;
 use crate::view::{Transition, View};
 use piston_window::{Button, Key};
 use piston_window::{clear, RenderArgs, UpdateArgs};
@@ -43,6 +44,7 @@ pub fn load_texture() -> GlTexture {
 pub struct App {
     view: View,
     held_keys: HeldKeys,
+    completed_levels: HashSet<usize>,  // haha wow this probably shouldn't go here
 }
 
 impl App {
@@ -50,6 +52,7 @@ impl App {
         App {
             view: View::title(),
             held_keys: HeldKeys::new(),
+            completed_levels: HashSet::new(),
         }
     }
 
@@ -64,7 +67,13 @@ impl App {
     pub fn update(&mut self, args: &UpdateArgs) {
         match self.view.update(args, &mut self.held_keys) {
             Some(Transition::Game(level_id)) => { self.view = View::game(level_id); },
-            Some(Transition::Menu(level_id)) => { self.view = View::menu(level_id); },
+            Some(Transition::Menu(level_id)) => {
+                let completed_levels = self.completed_levels.iter().copied().collect();
+                self.view = View::menu(level_id, completed_levels);
+            },
+            Some(Transition::Win(level_id)) => {
+                self.completed_levels.insert(level_id);
+            }
             None => (),
         }
     }

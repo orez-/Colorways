@@ -13,6 +13,7 @@ pub use title::TitleView;
 pub enum Transition {
     Game(usize),
     Menu(usize),
+    Win(usize),  // this isn't a transition at all! Who's running this circus??
 }
 
 pub enum View {
@@ -22,8 +23,8 @@ pub enum View {
 }
 
 impl View {
-    pub fn menu(level_id: usize) -> Self {
-        Self::Menu(MenuView::new(level_id))
+    pub fn menu(level_id: usize, completed_levels: Vec<usize>) -> Self {
+        Self::Menu(MenuView::new(level_id, completed_levels))
     }
 
     pub fn game(level_id: usize) -> Self {
