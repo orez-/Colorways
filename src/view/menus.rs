@@ -9,7 +9,7 @@ use piston_window::rectangle::rectangle_by_corners;
 const DISPLAY_WIDTH: f64 = 200.;
 const DISPLAY_HEIGHT: f64 = 200.;
 const LEVEL_PADDING: f64 = 8.;
-const LEVELS_HORIZONTAL: usize = 5;
+const LEVELS_HORIZONTAL: usize = 4;
 const LEVELS_VERTICAL: usize = 2;
 const LEVEL_WIDTH: f64 = 30.;
 const LEVEL_HEIGHT: f64 = 25.;

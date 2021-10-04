@@ -121,7 +121,7 @@ impl TitleView {
         }
     }
 
-    fn update_input_check(&mut self, args: &UpdateArgs, held_keys: &mut HeldKeys) {
+    fn update_input_check(&mut self, _args: &UpdateArgs, held_keys: &mut HeldKeys) {
         for input in held_keys.inputs() {
             if matches!(input, Input::Accept) {
                 self.state = State::Menu;

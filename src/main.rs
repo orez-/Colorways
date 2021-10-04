@@ -14,8 +14,7 @@ fn main() {
     let (width, height) = (800, 800);
 
     let mut window: PistonWindow<Sdl2Window> =
-        WindowSettings::new("LD49", [width, height])
-            .exit_on_esc(true)
+        WindowSettings::new("Colorways", [width, height])
             .build()
             .unwrap_or_else(|e| { panic!("Failed to build PistonWindow: {}", e) });
 
