@@ -1,7 +1,3 @@
-# For my submission to Ludum Dare 49, please see the [ld49-submission](https://github.com/orez-/ld49/tree/ld49-submission) branch, or find the executables from [this release](https://github.com/orez-/ld49/releases/tag/ld49-submission)
-
----
-
 # Colorways
 
 A Sokoban-ish puzzle game where things are exactly as they seem
