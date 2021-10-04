@@ -1,6 +1,7 @@
 use std::collections::HashSet;
 use crate::view::{Transition, View};
-use piston_window::{clear, Button, RenderArgs, UpdateArgs};
+use piston_window::{Button, Key};
+use piston_window::{clear, RenderArgs, UpdateArgs};
 use opengl_graphics::Filter;
 use opengl_graphics::GlGraphics;
 use opengl_graphics::Texture as GlTexture;
@@ -59,6 +60,32 @@ impl App {
     }
 }
 
+#[derive(PartialEq, Clone)]
+pub enum Direction {
+    North,
+    East,
+    South,
+    West,
+}
+
+impl Direction {
+    pub fn from(&self, x: i32, y: i32) -> (i32, i32) {
+        match self {
+            Direction::North => (x, y - 1),
+            Direction::West => (x - 1, y),
+            Direction::South => (x, y + 1),
+            Direction::East => (x + 1, y),
+        }
+    }
+}
+
+#[derive(PartialEq)]
+pub enum Input {
+    Navigate(Direction),
+    Accept,
+    Reject,
+}
+
 pub struct HeldKeys {
     key_set: HashSet<Button>,
     ordered_keys: Vec<Button>,
@@ -85,7 +112,22 @@ impl HeldKeys {
         }
     }
 
-    pub fn iter(&self) -> std::slice::Iter<Button> {
-        self.ordered_keys.iter()
+    pub fn inputs(&self) -> Vec<Input> {
+        let mut inputs = Vec::new();
+        for key in &self.ordered_keys {
+            let input = match key {
+                Button::Keyboard(Key::Space | Key::Z) => Input::Accept,
+                Button::Keyboard(Key::W) => Input::Navigate(Direction::North),
+                Button::Keyboard(Key::A) => Input::Navigate(Direction::West),
+                Button::Keyboard(Key::S) => Input::Navigate(Direction::South),
+                Button::Keyboard(Key::D) => Input::Navigate(Direction::East),
+                Button::Keyboard(Key::Backspace) => Input::Reject,
+                _ => continue,
+            };
+            if !inputs.contains(&input) {
+                inputs.push(input);
+            }
+        }
+        inputs
     }
 }

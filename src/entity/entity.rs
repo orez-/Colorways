@@ -1,5 +1,6 @@
 use piston_window::{Image, UpdateArgs};
-use crate::view::{Direction, GameAction, GameView};
+use crate::app::Direction;
+use crate::view::{GameAction, GameView};
 use crate::entity;
 
 // The boilerplatenest file. Try to stay out of here as much as possible.

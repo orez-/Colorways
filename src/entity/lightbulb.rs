@@ -1,8 +1,9 @@
 use opengl_graphics::GlGraphics;
 use piston_window::{Context, DrawState, Image, Polygon, UpdateArgs};
 use piston_window::draw_state::Blend;
+use crate::app::Direction;
 use crate::color::Color;
-use crate::view::{Direction, GameAction, GameView};
+use crate::view::{GameAction, GameView};
 
 const TILE_SIZE: f64 = 16.;
 const LIGHTBULB_ON: [f64; 4] = [16., 16., TILE_SIZE, TILE_SIZE];

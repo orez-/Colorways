@@ -1,6 +1,6 @@
 use piston_window::{Image, UpdateArgs};
-use crate::view::Direction;
-use crate::view::Direction::*;
+use crate::app::Direction;
+use crate::app::Direction::*;
 
 // fn flip(coords: [f64; 4]) -> [f64; 4] {
 //     [coords[0] + coords[2], coords[1], -coords[2], coords[3]]

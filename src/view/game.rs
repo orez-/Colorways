@@ -1,14 +1,12 @@
 use opengl_graphics::GlGraphics;
 use opengl_graphics::Texture as GlTexture;
-use piston_window::{Button, Key};
 use piston_window::{Context, DrawState, UpdateArgs, Transformed};
 use piston_window::draw_state::Blend;
-use crate::app::HeldKeys;
+use crate::app::{HeldKeys, Input};
 use crate::color::Color;
 use crate::entity::{Entity, Player};
 use crate::room::Room;
 use crate::view::Transition;
-use crate::view::Direction::*;
 
 const DISPLAY_WIDTH: f64 = 200.;
 const DISPLAY_HEIGHT: f64 = 200.;
@@ -118,34 +116,30 @@ impl GameView {
             entity.update(args);
         }
         let mut action = None;  // TODO: should probably be a vec? eh.
-        for key in held_keys.iter() {
-            let maybe_direction = match key {
-                Button::Keyboard(Key::W) => Some(North),
-                Button::Keyboard(Key::A) => Some(West),
-                Button::Keyboard(Key::S) => Some(South),
-                Button::Keyboard(Key::D) => Some(East),
-                Button::Keyboard(Key::P) => { return Some(Transition::Menu(self.level_id)); }
-                _ => None,
-            };
-            if let Some(direction) = maybe_direction {
-                self.player.face(&direction);
-                let (nx, ny) = direction.from(self.player.x, self.player.y);
-                if self.player.can_walk() && self.tile_is_passable(nx, ny) {
-                    if let Some(entity_id) = self.entity_at(nx, ny) {
-                        if self.entities[entity_id].is_approachable(&direction, self) {
-                            // borrow checker shenanigans
-                            match &self.entities[entity_id] {
-                                Entity::Block(block)
-                                if self.tile_in_light(block.x, block.y, &block.color) => (),
-                                _ => { action = self.entities[entity_id].on_approach(&direction); },
+        for input in held_keys.inputs() {
+            match input {
+                Input::Navigate(direction) => {
+                    self.player.face(&direction);
+                    let (nx, ny) = direction.from(self.player.x, self.player.y);
+                    if self.player.can_walk() && self.tile_is_passable(nx, ny) {
+                        if let Some(entity_id) = self.entity_at(nx, ny) {
+                            if self.entities[entity_id].is_approachable(&direction, self) {
+                                // borrow checker shenanigans
+                                match &self.entities[entity_id] {
+                                    Entity::Block(block)
+                                    if self.tile_in_light(block.x, block.y, &block.color) => (),
+                                    _ => { action = self.entities[entity_id].on_approach(&direction); },
+                                }
+                                self.player.walk(&direction);
                             }
+                        }
+                        else {
                             self.player.walk(&direction);
                         }
                     }
-                    else {
-                        self.player.walk(&direction);
-                    }
-                }
+                },
+                Input::Reject => { return Some(Transition::Menu(self.level_id)); },
+                _ => (),
             }
         }
         if let Some(action) = action {

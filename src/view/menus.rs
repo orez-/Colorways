@@ -1,9 +1,8 @@
-use crate::app::HeldKeys;
+use crate::app::{HeldKeys, Input};
 use crate::entity::Player;
 use crate::view::Transition;
 use opengl_graphics::GlGraphics;
 use opengl_graphics::Texture as GlTexture;
-use piston_window::{Button, Key};
 use piston_window::{Context, DrawState, Rectangle, UpdateArgs};
 use piston_window::rectangle::rectangle_by_corners;
 
@@ -62,25 +61,20 @@ impl MenuView {
 
     pub fn update(&mut self, args: &UpdateArgs, held_keys: &HeldKeys) -> Option<Transition> {
         self.cursor.update(args);
-        use crate::view::Direction;
-        for key in held_keys.iter() {
-            let maybe_direction = match key {
-                Button::Keyboard(Key::Space | Key::Z) => {
+        for input in held_keys.inputs() {
+            match input {
+                Input::Navigate(direction) => {
+                    self.cursor.face(&direction);
+                    let (nx, ny) = direction.from(self.cursor.x, self.cursor.y);
+                    if self.cursor.can_walk() && nx >= 0 && nx < 5 && ny >= 0 && ny < 5  {
+                        self.cursor.walk(&direction);
+                    }
+                }
+                Input::Accept => {
                     let level_id = self.cursor.y as usize * LEVELS_HORIZONTAL + self.cursor.x as usize;
                     return Some(Transition::Game(level_id));
-                },
-                Button::Keyboard(Key::W) => Some(Direction::North),
-                Button::Keyboard(Key::A) => Some(Direction::West),
-                Button::Keyboard(Key::S) => Some(Direction::South),
-                Button::Keyboard(Key::D) => Some(Direction::East),
-                _ => None,
-            };
-            if let Some(direction) = maybe_direction {
-                self.cursor.face(&direction);
-                let (nx, ny) = direction.from(self.cursor.x, self.cursor.y);
-                if self.cursor.can_walk() && nx >= 0 && nx < 5 && ny >= 0 && ny < 5  {
-                    self.cursor.walk(&direction);
                 }
+                _ => (),
             }
         }
         None

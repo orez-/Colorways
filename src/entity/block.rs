@@ -1,6 +1,7 @@
 use piston_window::{Image, UpdateArgs};
+use crate::app::Direction;
 use crate::color::Color;
-use crate::view::{Direction, GameAction, GameView};
+use crate::view::{GameAction, GameView};
 
 const TILE_SIZE: f64 = 16.;
 const BLOCK_OFFSET_Y: f64 = 8.;
