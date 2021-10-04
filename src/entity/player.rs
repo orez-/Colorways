@@ -93,8 +93,8 @@ impl Player {
     }
 
     pub fn menu_sprite(&self) -> Image {
-        const width: f64 = crate::menus::LEVEL_SPACING_X;
-        const height: f64 = crate::menus::LEVEL_SPACING_Y;
+        const width: f64 = crate::view::menus::LEVEL_SPACING_X;
+        const height: f64 = crate::view::menus::LEVEL_SPACING_Y;
         let src = self.sprite_src();
         let x = self.x as f64 * width + 15.;
         let y = self.y as f64 * height + 15.;

@@ -1,6 +1,5 @@
 use std::collections::HashSet;
-use crate::view::GameView;
-use crate::menus::MenuView;
+use crate::view::{GameView, MenuView};
 use piston_window::{clear, Button, RenderArgs, UpdateArgs};
 use opengl_graphics::Filter;
 use opengl_graphics::GlGraphics;

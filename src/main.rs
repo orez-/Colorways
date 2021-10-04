@@ -5,7 +5,6 @@ mod app;
 mod color;
 mod entity;
 mod line_of_sight;
-mod menus;
 mod room;
 mod view;
 

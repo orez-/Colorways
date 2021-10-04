@@ -7,6 +7,7 @@ use crate::app::HeldKeys;
 use crate::color::Color;
 use crate::entity::{Entity, Player};
 use crate::room::Room;
+use crate::view::Direction::*;
 
 const DISPLAY_WIDTH: f64 = 200.;
 const DISPLAY_HEIGHT: f64 = 200.;
@@ -15,26 +16,6 @@ const DISPLAY_HEIGHT_HALF: i64 = DISPLAY_HEIGHT as i64 / 2;
 
 pub enum GameAction {
     ColorChange(Color),
-}
-
-#[derive(Clone)]
-pub enum Direction {
-    North,
-    East,
-    South,
-    West,
-}
-use Direction::*;
-
-impl Direction {
-    pub fn from(&self, x: i32, y: i32) -> (i32, i32) {
-        match self {
-            North => (x, y - 1),
-            West => (x - 1, y),
-            South => (x, y + 1),
-            East => (x + 1, y),
-        }
-    }
 }
 
 pub struct GameView {
