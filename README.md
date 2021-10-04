@@ -1,5 +1,7 @@
 # Colorways
 
+A Sokoban-ish puzzle game where things are exactly as they seem
+
 My entry for Ludum Dare 49 - Unstable
 
 ![the title screen](raw/title_scrsh.png)
