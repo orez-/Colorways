@@ -11,4 +11,5 @@ My entry for Ludum Dare 49 - Unstable
 ![the title screen](raw/title_scrsh.png)
 
 ## Running from Source
-Download the source and run `cargo run --release`
+- Make sure [Rust is installed](https://www.rust-lang.org/tools/install)
+- Download the source and run `cargo run --release`
