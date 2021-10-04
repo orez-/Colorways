@@ -26,6 +26,8 @@ pub struct Player {
     pub x: i32,
     pub y: i32,
     state: State,
+    step_x: f64,
+    step_y: f64,
 }
 
 impl Player {
@@ -35,13 +37,24 @@ impl Player {
             facing: West,
             x, y,
             state: State::Idle,
+            step_x: TILE_SIZE, step_y: TILE_SIZE,
         }
     }
 
-    fn sub_position(&self, width: f64, height: f64) -> (f64, f64) {
+    pub fn new_cursor(x: i32, y: i32, step_x: f64, step_y: f64) -> Self {
+        Player {
+            face_left: false,
+            facing: East,
+            x, y,
+            state: State::Idle,
+            step_x, step_y,
+        }
+    }
+
+    fn sub_position(&self) -> (f64, f64) {
         if let State::Walk(p) = self.state {
-            let dx = ((1. - p) * width) as i8 as f64;
-            let dy = ((1. - p) * height) as i8 as f64;
+            let dx = ((1. - p) * self.step_x) as i8 as f64;
+            let dy = ((1. - p) * self.step_y) as i8 as f64;
             return match self.facing {
                 North => (0., -dy),
                 East => (dx, 0.),
@@ -84,28 +97,16 @@ impl Player {
 
     pub fn sprite(&self) -> Image {
         let src = self.sprite_src();
-        let (sx, sy) = self.sub_position(TILE_SIZE, TILE_SIZE);
-        let x = self.x as f64 * TILE_SIZE;
-        let y = self.y as f64 * TILE_SIZE;
-        Image::new()
-            .src_rect(src)
-            .rect([x - sx, y - sy, PLAYER_WIDTH, PLAYER_HEIGHT])
-    }
-
-    pub fn menu_sprite(&self) -> Image {
-        const width: f64 = crate::view::menus::LEVEL_SPACING_X;
-        const height: f64 = crate::view::menus::LEVEL_SPACING_Y;
-        let src = self.sprite_src();
-        let x = self.x as f64 * width + 15.;
-        let y = self.y as f64 * height + 15.;
-        let (sx, sy) = self.sub_position(width, height);
+        let (sx, sy) = self.sub_position();
+        let x = self.x as f64 * self.step_x;
+        let y = self.y as f64 * self.step_y;
         Image::new()
             .src_rect(src)
             .rect([x - sx, y - sy, PLAYER_WIDTH, PLAYER_HEIGHT])
     }
 
     pub fn center(&self) -> (i64, i64) {
-        let (sx, sy) = self.sub_position(TILE_SIZE, TILE_SIZE);
+        let (sx, sy) = self.sub_position();
         let x = self.x as f64 * TILE_SIZE + PLAYER_WIDTH_HALF;
         let y = self.y as f64 * TILE_SIZE + PLAYER_HEIGHT_HALF;
         (x as i64 - sx as i64, y as i64 - sy as i64)

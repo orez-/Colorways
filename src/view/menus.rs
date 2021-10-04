@@ -3,7 +3,7 @@ use crate::entity::Player;
 use crate::view::Transition;
 use opengl_graphics::GlGraphics;
 use opengl_graphics::Texture as GlTexture;
-use piston_window::{Context, DrawState, Rectangle, UpdateArgs};
+use piston_window::{Context, DrawState, Rectangle, Transformed, UpdateArgs};
 use piston_window::rectangle::rectangle_by_corners;
 
 const DISPLAY_WIDTH: f64 = 200.;
@@ -29,7 +29,7 @@ impl MenuView {
         let y = level / LEVELS_HORIZONTAL;
         Self {
             texture: crate::app::load_texture(),
-            cursor: Player::new(x as i32, y as i32),
+            cursor: Player::new_cursor(x as i32, y as i32, LEVEL_SPACING_X, LEVEL_SPACING_Y),
         }
     }
 
@@ -51,10 +51,10 @@ impl MenuView {
             }
         }
 
-        self.cursor.menu_sprite().draw(
+        self.cursor.sprite().draw(
             &self.texture,
             &DrawState::default(),
-            context.transform,
+            context.trans(15., 15.).transform,
             gl,
         );
     }
