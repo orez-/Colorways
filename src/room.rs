@@ -95,6 +95,14 @@ impl Room {
     }
 
     pub fn from_file(bytes: &[u8]) -> Game {
+        let starting_color = match bytes[0] {
+            b'R' => Color::Red,
+            b'G' => Color::Green,
+            b'B' => Color::Blue,
+            _ => Color::Gray,
+        };
+        let first_line = bytes.iter().position(|&c| c == b'\n').unwrap() + 1;
+        let bytes = &bytes[first_line..];
         let width = bytes.iter().position(|&c| c == b'\n').unwrap();
         let tiles: Vec<_> = bytes.iter()
             .filter_map(|&c| {
@@ -159,7 +167,7 @@ impl Room {
             Room { width, height, tiles, sees_color },
             player.expect(ONE_START_MSG),
             entities,
-            Color::Green,
+            starting_color,
         )
     }
 
