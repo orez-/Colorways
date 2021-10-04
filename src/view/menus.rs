@@ -65,7 +65,7 @@ impl MenuView {
         use crate::view::Direction;
         for key in held_keys.iter() {
             let maybe_direction = match key {
-                Button::Keyboard(Key::Space) => {
+                Button::Keyboard(Key::Space | Key::Z) => {
                     let level_id = self.cursor.y as usize * LEVELS_HORIZONTAL + self.cursor.x as usize;
                     return Some(Transition::Game(level_id));
                 },
@@ -78,7 +78,7 @@ impl MenuView {
             if let Some(direction) = maybe_direction {
                 self.cursor.face(&direction);
                 let (nx, ny) = direction.from(self.cursor.x, self.cursor.y);
-                if self.cursor.can_walk() {
+                if self.cursor.can_walk() && nx >= 0 && nx < 5 && ny >= 0 && ny < 5  {
                     self.cursor.walk(&direction);
                 }
             }
