@@ -1,5 +1,6 @@
 use crate::app::HeldKeys;
 use crate::entity::Player;
+use crate::view::Transition;
 use opengl_graphics::GlGraphics;
 use opengl_graphics::Texture as GlTexture;
 use piston_window::{Button, Key};
@@ -9,6 +10,8 @@ use piston_window::rectangle::rectangle_by_corners;
 const DISPLAY_WIDTH: f64 = 200.;
 const DISPLAY_HEIGHT: f64 = 200.;
 const LEVEL_PADDING: f64 = 8.;
+const LEVELS_HORIZONTAL: usize = 5;
+const LEVELS_VERTICAL: usize = 5;
 const LEVEL_WIDTH: f64 = 30.;
 const LEVEL_HEIGHT: f64 = 25.;
 const LEVEL_OFFSET_X: f64 = 9.;
@@ -22,18 +25,20 @@ pub struct MenuView {
 }
 
 impl MenuView {
-    pub fn new() -> Self {
+    pub fn new(level: usize) -> Self {
+        let x = level % LEVELS_HORIZONTAL;
+        let y = level / LEVELS_HORIZONTAL;
         Self {
             texture: crate::app::load_texture(),
-            cursor: Player::new(0, 0),
+            cursor: Player::new(x as i32, y as i32),
         }
     }
 
     pub fn render(&self, gl: &mut GlGraphics) {
         let context = Context::new_abs(DISPLAY_WIDTH, DISPLAY_HEIGHT);
         let color = Rectangle::new([0.2, 0.2, 0.2, 1.]);
-        for y in 0..5 {
-            for x in 0..5 {
+        for y in 0..LEVELS_VERTICAL {
+            for x in 0..LEVELS_HORIZONTAL {
                 let left = LEVEL_OFFSET_X + x as f64 * LEVEL_SPACING_X;
                 let top = LEVEL_OFFSET_Y + y as f64 * LEVEL_SPACING_Y;
                 let right = left + LEVEL_WIDTH;
@@ -55,13 +60,14 @@ impl MenuView {
         );
     }
 
-    pub fn update(&mut self, args: &UpdateArgs, held_keys: &HeldKeys) {
+    pub fn update(&mut self, args: &UpdateArgs, held_keys: &HeldKeys) -> Option<Transition> {
         self.cursor.update(args);
         use crate::view::Direction;
         for key in held_keys.iter() {
             let maybe_direction = match key {
                 Button::Keyboard(Key::Space) => {
-                    return;
+                    let level_id = self.cursor.y as usize * LEVELS_HORIZONTAL + self.cursor.x as usize;
+                    return Some(Transition::Game(level_id));
                 },
                 Button::Keyboard(Key::W) => Some(Direction::North),
                 Button::Keyboard(Key::A) => Some(Direction::West),
@@ -77,5 +83,6 @@ impl MenuView {
                 }
             }
         }
+        None
     }
 }

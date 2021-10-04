@@ -1,5 +1,5 @@
 use std::collections::HashSet;
-use crate::view::{GameView, MenuView};
+use crate::view::{Transition, View};
 use piston_window::{clear, Button, RenderArgs, UpdateArgs};
 use opengl_graphics::Filter;
 use opengl_graphics::GlGraphics;
@@ -22,14 +22,14 @@ pub fn load_texture() -> GlTexture {
 }
 
 pub struct App {
-    view: MenuView,
+    view: View,
     held_keys: HeldKeys,
 }
 
 impl App {
     pub fn new() -> Self {
         App {
-            view: MenuView::new(),
+            view: View::menu(0),
             held_keys: HeldKeys::new(),
         }
     }
@@ -43,7 +43,11 @@ impl App {
     }
 
     pub fn update(&mut self, args: &UpdateArgs) {
-        self.view.update(args, &self.held_keys);
+        match self.view.update(args, &self.held_keys) {
+            Some(Transition::Game(level_id)) => { self.view = View::game(level_id); },
+            Some(Transition::Menu(level_id)) => { self.view = View::menu(level_id); },
+            None => (),
+        }
     }
 
     pub fn key_press(&mut self, button: &Button) {

@@ -7,6 +7,7 @@ use crate::app::HeldKeys;
 use crate::color::Color;
 use crate::entity::{Entity, Player};
 use crate::room::Room;
+use crate::view::Transition;
 use crate::view::Direction::*;
 
 const DISPLAY_WIDTH: f64 = 200.;
@@ -24,17 +25,19 @@ pub struct GameView {
     room: Room,
     entities: Vec<Entity>,
     light_color: Color,
+    level_id: usize,
 }
 
 impl GameView {
-    pub fn new(level: usize) -> Self {
-        let (room, player, entities, light_color) = Room::new(level);
+    pub fn new(level_id: usize) -> Self {
+        let (room, player, entities, light_color) = Room::new(level_id);
         let mut game = GameView {
             texture: crate::app::load_texture(),
             player,
             room,
             entities,
             light_color: Color::Gray,
+            level_id,
         };
         game.set_light_color(light_color);
         game
@@ -109,7 +112,7 @@ impl GameView {
         self.render_lights(gl, &context);
     }
 
-    pub fn update(&mut self, args: &UpdateArgs, held_keys: &HeldKeys) {
+    pub fn update(&mut self, args: &UpdateArgs, held_keys: &HeldKeys) -> Option<Transition> {
         self.player.update(args);
         for entity in self.entities.iter_mut() {
             entity.update(args);
@@ -121,6 +124,7 @@ impl GameView {
                 Button::Keyboard(Key::A) => Some(West),
                 Button::Keyboard(Key::S) => Some(South),
                 Button::Keyboard(Key::D) => Some(East),
+                Button::Keyboard(Key::P) => { return Some(Transition::Menu(self.level_id)); }
                 _ => None,
             };
             if let Some(direction) = maybe_direction {
@@ -149,6 +153,7 @@ impl GameView {
                 GameAction::ColorChange(color) => { self.set_light_color(color); },
             }
         }
+        None
     }
 
     pub fn set_light_color(&mut self, color: Color) {
