@@ -59,7 +59,7 @@ impl MenuView {
         );
     }
 
-    pub fn update(&mut self, args: &UpdateArgs, held_keys: &HeldKeys) -> Option<Transition> {
+    pub fn update(&mut self, args: &UpdateArgs, held_keys: &mut HeldKeys) -> Option<Transition> {
         self.cursor.update(args);
         for input in held_keys.inputs() {
             match input {

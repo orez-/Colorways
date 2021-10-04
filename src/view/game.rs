@@ -110,7 +110,7 @@ impl GameView {
         self.render_lights(gl, &context);
     }
 
-    pub fn update(&mut self, args: &UpdateArgs, held_keys: &HeldKeys) -> Option<Transition> {
+    pub fn update(&mut self, args: &UpdateArgs, held_keys: &mut HeldKeys) -> Option<Transition> {
         self.player.update(args);
         for entity in self.entities.iter_mut() {
             entity.update(args);
