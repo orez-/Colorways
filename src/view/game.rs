@@ -2,7 +2,7 @@ use opengl_graphics::GlGraphics;
 use opengl_graphics::Texture as GlTexture;
 use piston_window::{Context, DrawState, Image, UpdateArgs, Transformed};
 use piston_window::draw_state::Blend;
-use crate::app::{HeldKeys, Input, int_lerp};
+use crate::app::{Direction, HeldKeys, Input, int_lerp};
 use crate::color::Color;
 use crate::entity::{Entity, Player};
 use crate::room::Room;
@@ -34,6 +34,7 @@ pub struct GameView {
     entities: Vec<Entity>,
     light_color: Color,
     level_id: usize,
+    cursor: Option<Player>,
     state: State,
 }
 
@@ -47,6 +48,7 @@ impl GameView {
             entities,
             light_color: Color::Gray,
             level_id,
+            cursor: None,
             state: State::Play,
         };
         game.set_light_color(light_color);
@@ -137,6 +139,14 @@ impl GameView {
                     abs_context.transform,
                     gl,
                 );
+            if let Some(cursor) = &self.cursor {
+                cursor.sprite().draw(
+                    &self.texture,
+                    &DrawState::default(),
+                    abs_context.trans(46., 107.).transform,
+                    gl,
+                );
+            }
         }
     }
 
@@ -148,7 +158,35 @@ impl GameView {
         match &mut self.state {
             State::Play => self.update_play(args, held_keys),
             State::Win(progress) => {
-                if *progress < 1. { *progress = (*progress + args.dt * 5.).min(1.); }
+                if *progress < 1. {
+                    *progress = *progress + args.dt * 5.;
+                    if *progress >= 1. {
+                        *progress = 1.;
+                        self.cursor = Some(Player::new(0, 0));
+                    }
+                }
+                if let Some(cursor) = &mut self.cursor {
+                    cursor.update(args);
+                    for input in held_keys.inputs() {
+                        if !cursor.can_walk() { break; }
+                        match input {
+                            Input::Navigate(direction @ Direction::North) if cursor.y == 1 => {
+                                cursor.walk(&direction);
+                            },
+                            Input::Navigate(direction @ Direction::South) if cursor.y == 0 => {
+                                cursor.walk(&direction);
+                            },
+                            Input::Accept => {
+                                match cursor.y {
+                                    0 => return Some(Transition::Game(self.level_id + 1)),
+                                    1 => return Some(Transition::Menu(self.level_id)),
+                                    _ => (),
+                                }
+                            },
+                            _ => (),
+                        }
+                    }
+                }
                 None
             }
         }
