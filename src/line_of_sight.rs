@@ -1,7 +1,6 @@
 use geo::polygon;
 use geo::prelude::Contains;
 use geo_visibility::Visibility as _;
-use crate::room::Room;
 
 const TILE_SIZE: f64 = 16.;
 

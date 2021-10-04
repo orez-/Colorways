@@ -1,19 +1,36 @@
 use std::collections::HashSet;
 use crate::view::GameView;
+use crate::menus::MenuView;
 use piston_window::{clear, Button, RenderArgs, UpdateArgs};
+use opengl_graphics::Filter;
 use opengl_graphics::GlGraphics;
+use opengl_graphics::Texture as GlTexture;
 
 const AMBIENT_LUM: f32 = 0.6;
 
+const TEXTURE: &[u8] = include_bytes!("../bin/spritesheet.png");
+
+pub fn load_texture() -> GlTexture {
+    let mut texture_settings = opengl_graphics::TextureSettings::new();
+    texture_settings.set_mag(Filter::Nearest);
+
+    let img = image::load_from_memory(TEXTURE).unwrap();
+    let img = match img {
+        image::DynamicImage::ImageRgba8(img) => img,
+        x => x.to_rgba8(),
+    };
+    GlTexture::from_image(&img, &texture_settings)
+}
+
 pub struct App {
-    view: GameView,
+    view: MenuView,
     held_keys: HeldKeys,
 }
 
 impl App {
     pub fn new() -> Self {
         App {
-            view: GameView::new(),
+            view: MenuView::new(),
             held_keys: HeldKeys::new(),
         }
     }

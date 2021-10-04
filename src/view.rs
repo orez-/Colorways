@@ -1,4 +1,3 @@
-use opengl_graphics::Filter;
 use opengl_graphics::GlGraphics;
 use opengl_graphics::Texture as GlTexture;
 use piston_window::{Button, Key};
@@ -13,20 +12,6 @@ const DISPLAY_WIDTH: f64 = 200.;
 const DISPLAY_HEIGHT: f64 = 200.;
 const DISPLAY_WIDTH_HALF: i64 = DISPLAY_WIDTH as i64 / 2;
 const DISPLAY_HEIGHT_HALF: i64 = DISPLAY_HEIGHT as i64 / 2;
-
-const TEXTURE: &[u8] = include_bytes!("../bin/spritesheet.png");
-
-fn load_texture() -> GlTexture {
-    let mut texture_settings = opengl_graphics::TextureSettings::new();
-    texture_settings.set_mag(Filter::Nearest);
-
-    let img = image::load_from_memory(TEXTURE).unwrap();
-    let img = match img {
-        image::DynamicImage::ImageRgba8(img) => img,
-        x => x.to_rgba8(),
-    };
-    GlTexture::from_image(&img, &texture_settings)
-}
 
 pub enum GameAction {
     ColorChange(Color),
@@ -61,10 +46,10 @@ pub struct GameView {
 }
 
 impl GameView {
-    pub fn new() -> Self {
-        let (room, player, entities, light_color) = Room::new();
+    pub fn new(level: usize) -> Self {
+        let (room, player, entities, light_color) = Room::new(level);
         let mut game = GameView {
-            texture: load_texture(),
+            texture: crate::app::load_texture(),
             player,
             room,
             entities,

@@ -7,8 +7,11 @@ use crate::entity::{Block, Entity, Lightbulb, LightSwitch, Player};
 use crate::line_of_sight::{line_of_sight, Visibility};
 
 const ONE_START_MSG: &str = "level must have exactly one starting position";
-const LEVEL2: &[u8] = include_bytes!("../bin/levels/level3.skb");
-// const LEVEL2: &[u8] = include_bytes!("../bin/levels/playground.skb");
+const LEVELS: [&[u8]; 3] = [
+    include_bytes!("../bin/levels/level1.skb"),
+    include_bytes!("../bin/levels/level2.skb"),
+    include_bytes!("../bin/levels/level3.skb"),
+];
 const TILE_SIZE: f64 = 16.;
 const WALL: [f64; 4] = [32., 0., TILE_SIZE, TILE_SIZE];
 const FLOOR: [f64; 4] = [32., 16., TILE_SIZE, TILE_SIZE];
@@ -87,8 +90,8 @@ pub struct Room {
 }
 
 impl Room {
-    pub fn new() -> Game {
-        Room::from_file(LEVEL2)
+    pub fn new(level: usize) -> Game {
+        Room::from_file(LEVELS[level])
     }
 
     pub fn from_file(bytes: &[u8]) -> Game {
