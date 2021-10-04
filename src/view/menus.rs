@@ -59,7 +59,7 @@ impl MenuView {
             let left = LEVEL_OFFSET_X + x as f64 * LEVEL_SPACING_X + 20.;
             let top = LEVEL_OFFSET_Y + y as f64 * LEVEL_SPACING_Y - 5.;
             Image::new()
-                .src_rect([32., 64., 16., 16.])
+                .src_rect([96., 16., 16., 16.])
                 .rect([left, top, 16., 16.])
                 .draw(
                     &self.texture,

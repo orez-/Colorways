@@ -9,6 +9,7 @@ pub enum Entity {
     Exit(entity::Exit),
     Lightbulb(entity::Lightbulb),
     LightSwitch(entity::LightSwitch),
+    Water(entity::Water),
 }
 use Entity::*;
 
@@ -19,6 +20,7 @@ impl Entity {
             Exit(e) => e.sprite(),
             Lightbulb(e) => e.sprite(),
             LightSwitch(e) => e.sprite(),
+            Water(e) => e.sprite(),
         }
     }
 
@@ -28,15 +30,17 @@ impl Entity {
             Exit(e) => e.update(args),
             Lightbulb(e) => e.update(args),
             LightSwitch(e) => e.update(args),
+            Water(e) => e.update(args),
         }
     }
 
-    pub fn is_approachable(&self, direction: &Direction, game: &GameView) -> bool {
+    pub fn is_approachable(&self, direction: &Direction, game: &GameView) -> Option<GameAction> {
         match self {
             Block(e) => e.is_approachable(direction, game),
             Exit(e) => e.is_approachable(direction, game),
             Lightbulb(e) => e.is_approachable(direction, game),
             LightSwitch(e) => e.is_approachable(direction, game),
+            Water(e) => e.is_approachable(direction, game),
         }
     }
 
@@ -46,6 +50,7 @@ impl Entity {
             Exit(e) => e.on_approach(direction),
             Lightbulb(e) => e.on_approach(direction),
             LightSwitch(e) => e.on_approach(direction),
+            Water(e) => e.on_approach(direction),
         }
     }
 
@@ -55,6 +60,7 @@ impl Entity {
             Exit(e) => e.x,
             Lightbulb(e) => e.x,
             LightSwitch(e) => e.x,
+            Water(e) => e.x,
         }
     }
 
@@ -64,6 +70,7 @@ impl Entity {
             Exit(e) => e.y,
             Lightbulb(e) => e.y,
             LightSwitch(e) => e.y,
+            Water(e) => e.y,
         }
     }
 }

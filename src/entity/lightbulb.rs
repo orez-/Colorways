@@ -68,8 +68,8 @@ impl Lightbulb {
         }
     }
 
-    pub fn is_approachable(&self, _direction: &Direction, _game: &GameView) -> bool {
-        false
+    pub fn is_approachable(&self, _direction: &Direction, _game: &GameView) -> Option<GameAction> {
+        Some(GameAction::Stop)
     }
     pub fn on_approach(&mut self, _direction: &Direction) -> Option<GameAction> { None }
 

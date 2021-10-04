@@ -3,14 +3,15 @@ use opengl_graphics::GlGraphics;
 use opengl_graphics::Texture as GlTexture;
 use geo::polygon;
 use crate::color::Color;
-use crate::entity::{Block, Entity, Exit, Lightbulb, LightSwitch, Player};
+use crate::entity::{Block, Entity, Exit, Lightbulb, LightSwitch, Player, Water};
 use crate::line_of_sight::{line_of_sight, Visibility};
 
 const ONE_START_MSG: &str = "level must have exactly one starting position";
-const LEVELS: [&[u8]; 3] = [
+const LEVELS: [&[u8]; 4] = [
     include_bytes!("../bin/levels/level1.skb"),
     include_bytes!("../bin/levels/level2.skb"),
     include_bytes!("../bin/levels/level3.skb"),
+    include_bytes!("../bin/levels/level4.skb"),
 ];
 const TITLE_LEVEL: &[u8] = include_bytes!("../bin/levels/title.skb");
 const TILE_SIZE: f64 = 16.;
@@ -152,7 +153,8 @@ impl Room {
                 '1' => { entities.push(Entity::LightSwitch(LightSwitch::new(x, y, Color::Red))); },
                 '2' => { entities.push(Entity::LightSwitch(LightSwitch::new(x, y, Color::Green))); },
                 '3' => { entities.push(Entity::LightSwitch(LightSwitch::new(x, y, Color::Blue))); },
-                'z' => { entities.push(Entity::Exit(Exit::new(x, y,))); },
+                'z' => { entities.push(Entity::Exit(Exit::new(x, y))); },
+                '~' => { entities.push(Entity::Water(Water::new(x, y))); },
                 '\n' => {
                     x = 0;
                     y += 1;

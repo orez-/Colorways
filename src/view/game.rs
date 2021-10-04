@@ -17,9 +17,12 @@ const LEVEL_COMPLETE_SRC: [f64; 4] = [128., 0., 128., 112.];
 const LEVEL_COMPLETE_START_DEST: [f64; 4] = [36., -112., 128., 112.];
 const LEVEL_COMPLETE_END_DEST: [f64; 4] = [36., 40., 128., 112.];
 
+#[derive(Debug)]
 pub enum GameAction {
+    Stop,
     ColorChange(Color),
     Win,
+    DestroyBoth(usize, usize),
 }
 
 pub enum State {
@@ -200,20 +203,22 @@ impl GameView {
                     self.player.face(&direction);
                     let (nx, ny) = direction.from(self.player.x, self.player.y);
                     if self.player.can_walk() && self.tile_is_passable(nx, ny) {
-                        if let Some(entity_id) = self.entity_at(nx, ny) {
-                            if self.entities[entity_id].is_approachable(&direction, self) {
-                                // borrow checker shenanigans
-                                match &self.entities[entity_id] {
-                                    Entity::Block(block)
-                                    if self.tile_in_light(block.x, block.y, &block.color) => (),
-                                    _ => { action = self.entities[entity_id].on_approach(&direction); },
+                        if let Some(entity_id) = self.entity_id_at(nx, ny) {
+                            if let Some(approach_action) = self.entities[entity_id].is_approachable(&direction, self) {
+                                if matches!(approach_action, GameAction::Stop) { continue; }
+                                if let GameAction::DestroyBoth(idx1, _) = approach_action {
+                                    action = Some(GameAction::DestroyBoth(idx1, entity_id));
+                                    continue;
                                 }
-                                self.player.walk(&direction);
+                            }
+                            // borrow checker shenanigans
+                            match &self.entities[entity_id] {
+                                Entity::Block(block)
+                                if self.tile_in_light(block.x, block.y, &block.color) => (),
+                                _ => { action = self.entities[entity_id].on_approach(&direction); },
                             }
                         }
-                        else {
-                            self.player.walk(&direction);
-                        }
+                        self.player.walk(&direction);
                     }
                 },
                 Input::Reject => { return Some(Transition::Menu(self.level_id)); },
@@ -227,6 +232,11 @@ impl GameView {
                     self.state = State::Win(0.);
                     return Some(Transition::Win(self.level_id));
                 },
+                GameAction::DestroyBoth(idx1, idx2) => {
+                    let mut idx = 0;
+                    self.entities.retain(|_| { let m = idx1 != idx && idx2 != idx; idx += 1; m });
+                },
+                GameAction::Stop => (),
             }
         }
         None
@@ -253,8 +263,13 @@ impl GameView {
         color == &self.light_color && self.room.tile_in_light(x, y, color)
     }
 
-    pub fn entity_at(&self, x: i32, y: i32) -> Option<usize> {
+    pub fn entity_id_at(&self, x: i32, y: i32) -> Option<usize> {
         self.entities.iter()
             .position(|e| e.x() == x && e.y() == y)
+    }
+
+    pub fn entity_at(&self, x: i32, y: i32) -> Option<&Entity> {
+        let idx = self.entity_id_at(x, y)?;
+        Some(&self.entities[idx])
     }
 }
