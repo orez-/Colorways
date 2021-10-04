@@ -135,6 +135,9 @@ impl Room {
                 'r' => { entities.push(Entity::Block(Block::new(x, y, Color::Red))); },
                 'g' => { entities.push(Entity::Block(Block::new(x, y, Color::Green))); },
                 'b' => { entities.push(Entity::Block(Block::new(x, y, Color::Blue))); },
+                'y' => { entities.push(Entity::Block(Block::new(x, y, Color::Yellow))); },
+                'c' => { entities.push(Entity::Block(Block::new(x, y, Color::Cyan))); },
+                'm' => { entities.push(Entity::Block(Block::new(x, y, Color::Magenta))); },
                 'w' => { entities.push(Entity::Block(Block::new(x, y, Color::White))); },
                 'R' => {
                     let Visibility { polygon_pts, tiles } = line_of_sight(x, y, width, height, &walls_polygon);
