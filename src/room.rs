@@ -7,11 +7,12 @@ use crate::entity::{Block, Entity, Exit, Lightbulb, LightSwitch, Player, Water};
 use crate::line_of_sight::{line_of_sight, Visibility};
 
 const ONE_START_MSG: &str = "level must have exactly one starting position";
-const LEVELS: [&[u8]; 4] = [
+const LEVELS: [&[u8]; 5] = [
     include_bytes!("../bin/levels/level1.skb"),
     include_bytes!("../bin/levels/level2.skb"),
     include_bytes!("../bin/levels/level3.skb"),
     include_bytes!("../bin/levels/level4.skb"),
+    include_bytes!("../bin/levels/level5.skb"),
 ];
 const TITLE_LEVEL: &[u8] = include_bytes!("../bin/levels/title.skb");
 const TILE_SIZE: f64 = 16.;

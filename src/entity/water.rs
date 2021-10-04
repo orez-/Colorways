@@ -25,7 +25,8 @@ impl Water {
     }
 
     pub fn update(&mut self, _args: &UpdateArgs) {}
-    pub fn is_approachable(&self, _direction: &Direction, _game: &GameView) -> Option<GameAction> {
+    pub fn is_approachable(&self, _direction: &Direction, view: &GameView) -> Option<GameAction> {
+        if view.tile_in_light(self.x, self.y, &Color::Blue) { return None; }
         Some(GameAction::Stop)
     }
     pub fn on_approach(&mut self, _direction: &Direction) -> Option<GameAction> {

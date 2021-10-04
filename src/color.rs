@@ -30,9 +30,9 @@ impl Color {
     pub fn as_light_component(&self) -> ComponentColor {
         match self {
             Gray => GRAY,
-            Red => [1., 0.3, 0.3, 1.],
-            Green => [0.3, 1., 0.3, 1.],
-            Blue => [0.3, 0.3, 1., 1.],
+            Red => [1., 0.2, 0.2, 1.],
+            Green => [0.2, 1., 0.2, 1.],
+            Blue => [0.2, 0.2, 1., 1.],
             White => WHITE,
         }
     }
