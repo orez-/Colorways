@@ -11,4 +11,8 @@ pistoncore-sdl2_window = "0.67.0"
 piston2d-opengl_graphics = "0.78.0"
 image = "0.23.14"
 geo = "0.18.0"
-geo-visibility = "0.4.0"
+geo-clipper = "0.7.0"
+geo-visibility = "0.5.1-alpha.0"
+
+[patch.crates-io]
+geo-visibility = { path = "vendor/geo-visibility" }

@@ -1,3 +1,5 @@
+# This branch is specifically for OSX users affected by the `cargo:warning=clipper/wrapper.cpp:21:34: error: a space is required between consecutive right angle brackets (use '> >')` compilation bug.
+
 # Colorways
 
 A Sokoban-ish puzzle game where things are exactly as they seem
