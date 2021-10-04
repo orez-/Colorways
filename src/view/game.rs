@@ -1,8 +1,8 @@
 use opengl_graphics::GlGraphics;
 use opengl_graphics::Texture as GlTexture;
-use piston_window::{Context, DrawState, UpdateArgs, Transformed};
+use piston_window::{Context, DrawState, Image, UpdateArgs, Transformed};
 use piston_window::draw_state::Blend;
-use crate::app::{HeldKeys, Input};
+use crate::app::{HeldKeys, Input, int_lerp};
 use crate::color::Color;
 use crate::entity::{Entity, Player};
 use crate::room::Room;
@@ -13,8 +13,18 @@ const DISPLAY_HEIGHT: f64 = 200.;
 const DISPLAY_WIDTH_HALF: i64 = DISPLAY_WIDTH as i64 / 2;
 const DISPLAY_HEIGHT_HALF: i64 = DISPLAY_HEIGHT as i64 / 2;
 
+const LEVEL_COMPLETE_SRC: [f64; 4] = [128., 0., 128., 112.];
+const LEVEL_COMPLETE_START_DEST: [f64; 4] = [36., -112., 128., 112.];
+const LEVEL_COMPLETE_END_DEST: [f64; 4] = [36., 40., 128., 112.];
+
 pub enum GameAction {
     ColorChange(Color),
+    Win,
+}
+
+pub enum State {
+    Play,
+    Win(f64),
 }
 
 pub struct GameView {
@@ -24,6 +34,7 @@ pub struct GameView {
     entities: Vec<Entity>,
     light_color: Color,
     level_id: usize,
+    state: State,
 }
 
 impl GameView {
@@ -36,6 +47,7 @@ impl GameView {
             entities,
             light_color: Color::Gray,
             level_id,
+            state: State::Play,
         };
         game.set_light_color(light_color);
         game
@@ -78,7 +90,7 @@ impl GameView {
         }
     }
 
-    pub fn render(&self, gl: &mut GlGraphics) {
+    fn render_game(&self, gl: &mut GlGraphics) {
         // Camera
         let context = self.camera_context();
 
@@ -110,11 +122,39 @@ impl GameView {
         self.render_lights(gl, &context);
     }
 
+    pub fn render(&self, gl: &mut GlGraphics) {
+        self.render_game(gl);
+
+        if let State::Win(progress) = self.state {
+            let abs_context = self.absolute_context();
+            let dest = int_lerp(LEVEL_COMPLETE_START_DEST, LEVEL_COMPLETE_END_DEST, progress);
+            Image::new()
+                .src_rect(LEVEL_COMPLETE_SRC)
+                .rect(dest)
+                .draw(
+                    &self.texture,
+                    &DrawState::default(),
+                    abs_context.transform,
+                    gl,
+                );
+        }
+    }
+
     pub fn update(&mut self, args: &UpdateArgs, held_keys: &mut HeldKeys) -> Option<Transition> {
         self.player.update(args);
         for entity in self.entities.iter_mut() {
             entity.update(args);
         }
+        match &mut self.state {
+            State::Play => self.update_play(args, held_keys),
+            State::Win(progress) => {
+                if *progress < 1. { *progress = (*progress + args.dt * 5.).min(1.); }
+                None
+            }
+        }
+    }
+
+    fn update_play(&mut self, _args: &UpdateArgs, held_keys: &mut HeldKeys) -> Option<Transition> {
         let mut action = None;  // TODO: should probably be a vec? eh.
         for input in held_keys.inputs() {
             match input {
@@ -145,6 +185,7 @@ impl GameView {
         if let Some(action) = action {
             match action {
                 GameAction::ColorChange(color) => { self.set_light_color(color); },
+                GameAction::Win => { self.state = State::Win(0.); },
             }
         }
         None

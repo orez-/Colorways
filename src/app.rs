@@ -7,6 +7,25 @@ use opengl_graphics::Texture as GlTexture;
 
 const AMBIENT_LUM: f32 = 0.6;
 
+pub fn lerp<T>(left: [T; 4], right: [T; 4], p: T) -> [T; 4]
+where T: std::ops::Sub<Output = T> + std::ops::Mul<Output = T> + std::ops::Add<Output = T> + Copy {  // lmao
+    [
+        (right[0] - left[0]) * p + left[0],
+        (right[1] - left[1]) * p + left[1],
+        (right[2] - left[2]) * p + left[2],
+        (right[3] - left[3]) * p + left[3],
+    ]
+}
+
+pub fn int_lerp(left: [f64; 4], right: [f64; 4], p: f64) -> [f64; 4] {
+    [
+        ((right[0] - left[0]) * p + left[0]) as i64 as f64,
+        ((right[1] - left[1]) * p + left[1]) as i64 as f64,
+        ((right[2] - left[2]) * p + left[2]) as i64 as f64,
+        ((right[3] - left[3]) * p + left[3]) as i64 as f64,
+    ]
+}
+
 const TEXTURE: &[u8] = include_bytes!("../bin/spritesheet.png");
 
 pub fn load_texture() -> GlTexture {

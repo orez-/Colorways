@@ -1,6 +1,5 @@
 use piston_window::{Image, UpdateArgs};
 use crate::app::Direction;
-use crate::color::Color;
 use crate::view::{GameAction, GameView};
 
 const TILE_SIZE: f64 = 16.;
@@ -22,9 +21,9 @@ impl Exit {
             .src_rect(EXIT)
             .rect([x, y, TILE_SIZE, TILE_SIZE])
     }
-    pub fn update(&mut self, args: &UpdateArgs) {}
-    pub fn is_approachable(&self, direction: &Direction, game: &GameView) -> bool { true }
-    pub fn on_approach(&mut self, direction: &Direction) -> Option<GameAction> {
-        None
+    pub fn update(&mut self, _args: &UpdateArgs) {}
+    pub fn is_approachable(&self, _direction: &Direction, _game: &GameView) -> bool { true }
+    pub fn on_approach(&mut self, _direction: &Direction) -> Option<GameAction> {
+        Some(GameAction::Win)
     }
 }

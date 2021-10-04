@@ -11,8 +11,10 @@ const DISPLAY_WIDTH: f64 = 200.;
 const DISPLAY_HEIGHT: f64 = 200.;
 const ROOM_OFFSET_X: f64 = -20.;
 const ROOM_OFFSET_Y: f64 = -24.;
-const LOGO_SRC: [f64; 4] = [0., 80., 192., 80.];
-const LOGO_DEST: [f64; 4] = [4., 9., 192., 80.];
+const LOGO_LEFT_SRC: [f64; 4] = [0., 80., 80., 80.];
+const LOGO_LEFT_DEST: [f64; 4] = [4., 9., 80., 80.];
+const LOGO_RIGHT_SRC: [f64; 4] = [80., 112., 112., 48.];
+const LOGO_RIGHT_DEST: [f64; 4] = [84., 41., 112., 48.];
 const INPUT_CHECK_SRC: [f64; 4] = [48., 48., 80., 16.];
 const INPUT_CHECK_DEST: [f64; 4] = [96. + ROOM_OFFSET_X, 112. + ROOM_OFFSET_Y, 80., 16.];
 const PLAY_NOW_SRC: [f64; 4] = [48., 0., 80., 16.];
@@ -87,7 +89,8 @@ impl TitleView {
                 gl,
             );
         };
-        draw_sprite(LOGO_SRC, LOGO_DEST);
+        draw_sprite(LOGO_LEFT_SRC, LOGO_LEFT_DEST);
+        draw_sprite(LOGO_RIGHT_SRC, LOGO_RIGHT_DEST);
         match self.state {
             State::InputCheck => {
                 draw_sprite(INPUT_CHECK_SRC, INPUT_CHECK_DEST);
