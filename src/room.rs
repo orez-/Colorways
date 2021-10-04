@@ -7,7 +7,8 @@ use crate::entity::{Block, Entity, Exit, Lightbulb, LightSwitch, Player, Water};
 use crate::line_of_sight::{line_of_sight, Visibility};
 
 const ONE_START_MSG: &str = "level must have exactly one starting position";
-const LEVELS: [&[u8]; 5] = [
+pub const NUM_LEVELS: usize = 5;
+const LEVELS: [&[u8]; NUM_LEVELS] = [
     include_bytes!("../bin/levels/level1.skb"),
     include_bytes!("../bin/levels/level2.skb"),
     include_bytes!("../bin/levels/level3.skb"),
