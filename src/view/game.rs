@@ -246,6 +246,7 @@ impl GameView {
     }
 
     pub fn tile_in_light(&self, x: i32, y: i32, color: &Color) -> bool {
+        if color == &Color::White { return true; }
         color == &self.light_color && self.room.tile_in_light(x, y, color)
     }
 
