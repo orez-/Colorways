@@ -12,6 +12,7 @@ const LEVELS: [&[u8]; 3] = [
     include_bytes!("../bin/levels/level2.skb"),
     include_bytes!("../bin/levels/level3.skb"),
 ];
+const TITLE_LEVEL: &[u8] = include_bytes!("../bin/levels/title.skb");
 const TILE_SIZE: f64 = 16.;
 const WALL: [f64; 4] = [32., 0., TILE_SIZE, TILE_SIZE];
 const FLOOR: [f64; 4] = [32., 16., TILE_SIZE, TILE_SIZE];
@@ -92,6 +93,10 @@ pub struct Room {
 impl Room {
     pub fn new(level: usize) -> Game {
         Room::from_file(LEVELS[level])
+    }
+
+    pub fn new_title() -> Game {
+        Room::from_file(TITLE_LEVEL)
     }
 
     pub fn from_file(bytes: &[u8]) -> Game {
