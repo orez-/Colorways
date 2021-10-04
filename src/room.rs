@@ -3,7 +3,7 @@ use opengl_graphics::GlGraphics;
 use opengl_graphics::Texture as GlTexture;
 use geo::polygon;
 use crate::color::Color;
-use crate::entity::{Block, Entity, Lightbulb, LightSwitch, Player};
+use crate::entity::{Block, Entity, Exit, Lightbulb, LightSwitch, Player};
 use crate::line_of_sight::{line_of_sight, Visibility};
 
 const ONE_START_MSG: &str = "level must have exactly one starting position";
@@ -16,13 +16,11 @@ const TITLE_LEVEL: &[u8] = include_bytes!("../bin/levels/title.skb");
 const TILE_SIZE: f64 = 16.;
 const WALL: [f64; 4] = [32., 0., TILE_SIZE, TILE_SIZE];
 const FLOOR: [f64; 4] = [32., 16., TILE_SIZE, TILE_SIZE];
-const EXIT: [f64; 4] = [16., 0., TILE_SIZE, TILE_SIZE];
 
 #[derive(Clone)]
 pub enum Tile {
     Floor,
     Wall,
-    Exit,
 }
 use Tile::*;
 
@@ -30,7 +28,6 @@ impl Tile {
     fn from_chr(chr: char) -> Self {
         match chr {
             '#' => Wall,
-            'z' => Exit,
             _ => Floor,
         }
     }
@@ -39,7 +36,6 @@ impl Tile {
         let src = match self {
             Wall => WALL,
             Floor => FLOOR,
-            Exit => EXIT,
         };
         Image::new()
             .src_rect(src)
@@ -50,7 +46,6 @@ impl Tile {
         match self {
             Wall => false,
             Floor => true,
-            Exit => true,
         }
     }
 
@@ -149,6 +144,7 @@ impl Room {
                 '1' => { entities.push(Entity::LightSwitch(LightSwitch::new(x, y, Color::Red))); },
                 '2' => { entities.push(Entity::LightSwitch(LightSwitch::new(x, y, Color::Green))); },
                 '3' => { entities.push(Entity::LightSwitch(LightSwitch::new(x, y, Color::Blue))); },
+                'z' => { entities.push(Entity::Exit(Exit::new(x, y,))); },
                 '\n' => {
                     x = 0;
                     y += 1;
