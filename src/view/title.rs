@@ -13,15 +13,15 @@ const ROOM_OFFSET_X: f64 = -20.;
 const ROOM_OFFSET_Y: f64 = -24.;
 const LOGO_SRC: [f64; 4] = [0., 80., 192., 80.];
 const LOGO_DEST: [f64; 4] = [4., 9., 192., 80.];
-const INPUT_CHECK_SRC: [f64; 4] = [112., 48., 80., 16.];
+const INPUT_CHECK_SRC: [f64; 4] = [48., 48., 80., 16.];
 const INPUT_CHECK_DEST: [f64; 4] = [96. + ROOM_OFFSET_X, 112. + ROOM_OFFSET_Y, 80., 16.];
-const PLAY_NOW_SRC: [f64; 4] = [112., 0., 80., 16.];
+const PLAY_NOW_SRC: [f64; 4] = [48., 0., 80., 16.];
 const PLAY_NOW_DEST: [f64; 4] = [96. + ROOM_OFFSET_X, 112. + ROOM_OFFSET_Y, 80., 16.];
-const LEVELS_SRC: [f64; 4] = [112., 16., 80., 16.];
+const LEVELS_SRC: [f64; 4] = [48., 16., 80., 16.];
 const LEVELS_DEST: [f64; 4] = [96. + ROOM_OFFSET_X, 128. + ROOM_OFFSET_Y, 80., 16.];
-const CREDITS_SRC: [f64; 4] = [112., 32., 80., 16.];
+const CREDITS_SRC: [f64; 4] = [48., 32., 80., 16.];
 const CREDITS_DEST: [f64; 4] = [96. + ROOM_OFFSET_X, 144. + ROOM_OFFSET_Y, 80., 16.];
-const AUTHOR_SRC: [f64; 4] = [112., 64., 80., 16.];
+const AUTHOR_SRC: [f64; 4] = [48., 64., 80., 16.];
 const AUTHOR_DEST: [f64; 4] = [110., 184., 80., 16.];
 
 enum State {

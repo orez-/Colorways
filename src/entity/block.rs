@@ -4,10 +4,10 @@ use crate::color::Color;
 use crate::view::{GameAction, GameView};
 
 const TILE_SIZE: f64 = 16.;
-const BLOCK_OFFSET_Y: f64 = 8.;
-const BLOCK_WIDTH: f64 = 16.;
-const BLOCK_HEIGHT: f64 = 24.;
-const BLOCK: [f64; 4] = [64., 0., BLOCK_WIDTH, BLOCK_HEIGHT];
+const BLOCK_WIDTH: f64 = TILE_SIZE;
+const BLOCK_HEIGHT: f64 = TILE_SIZE;
+const BLOCK_OFFSET_Y: f64 = BLOCK_HEIGHT - TILE_SIZE;
+const BLOCK: [f64; 4] = [0., 64., BLOCK_WIDTH, BLOCK_HEIGHT];
 
 enum State {
     Idle,

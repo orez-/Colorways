@@ -4,7 +4,7 @@ use crate::color::Color;
 use crate::view::{GameAction, GameView};
 
 const TILE_SIZE: f64 = 16.;
-const LIGHTSWITCH: [f64; 4] = [48., 0., TILE_SIZE, TILE_SIZE];
+const LIGHTSWITCH: [f64; 4] = [0., 32., TILE_SIZE, TILE_SIZE];
 
 pub struct LightSwitch {
     pub x: i32,
