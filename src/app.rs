@@ -6,7 +6,7 @@ use opengl_graphics::Filter;
 use opengl_graphics::GlGraphics;
 use opengl_graphics::Texture as GlTexture;
 
-const AMBIENT_LUM: f32 = 0.6;
+const AMBIENT_LUM: f32 = 0.4;
 
 pub fn lerp<T>(left: [T; 4], right: [T; 4], p: T) -> [T; 4]
 where T: std::ops::Sub<Output = T> + std::ops::Mul<Output = T> + std::ops::Add<Output = T> + Copy {  // lmao

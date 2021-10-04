@@ -13,10 +13,12 @@ const LEVELS_HORIZONTAL: usize = 4;
 const LEVELS_VERTICAL: usize = 2;
 const LEVEL_WIDTH: f64 = 30.;
 const LEVEL_HEIGHT: f64 = 25.;
-const LEVEL_OFFSET_X: f64 = 9.;
+const LEVEL_OFFSET_X: f64 = 29.;
 const LEVEL_OFFSET_Y: f64 = 9.;
-pub const LEVEL_SPACING_X: f64 = LEVEL_WIDTH + LEVEL_PADDING;
-pub const LEVEL_SPACING_Y: f64 = LEVEL_HEIGHT + LEVEL_PADDING;
+const LEVEL_SPACING_X: f64 = LEVEL_WIDTH + LEVEL_PADDING;
+const LEVEL_SPACING_Y: f64 = LEVEL_HEIGHT + LEVEL_PADDING;
+const INSTRUCTION_SRC: [f64; 4] = [192., 112., 64., 48.];
+const INSTRUCTION_DEST: [f64; 4] = [68., 100., 64., 48.];
 
 pub struct MenuView {
     texture: GlTexture,
@@ -37,7 +39,7 @@ impl MenuView {
 
     pub fn render(&self, gl: &mut GlGraphics) {
         let context = Context::new_abs(DISPLAY_WIDTH, DISPLAY_HEIGHT);
-        let color = Rectangle::new([0.2, 0.2, 0.2, 1.]);
+        let color = Rectangle::new([0.7, 0.7, 0.7, 1.]);
         for y in 0..LEVELS_VERTICAL {
             for x in 0..LEVELS_HORIZONTAL {
                 let left = LEVEL_OFFSET_X + x as f64 * LEVEL_SPACING_X;
@@ -69,10 +71,20 @@ impl MenuView {
                 );
         }
 
+        Image::new()
+            .src_rect(INSTRUCTION_SRC)
+            .rect(INSTRUCTION_DEST)
+            .draw(
+                &self.texture,
+                &DrawState::default(),
+                context.transform,
+                gl,
+            );
+
         self.cursor.sprite().draw(
             &self.texture,
             &DrawState::default(),
-            context.trans(15., 15.).transform,
+            context.trans(35., 15.).transform,
             gl,
         );
     }
