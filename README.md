@@ -21,3 +21,7 @@ Executables and instructions for running can be found [here](https://github.com/
 ## Running from Source
 - Make sure [Rust is installed](https://www.rust-lang.org/tools/install)
 - Download the source and run `cargo run --release`
+
+## Special Thanks
+- Thanks to [@zellio](https://github.com/zellio) for packaging the executables
+- Thanks to Doug Beck, Frank Zegarra, Zachary Elliot, and Benoit Hiller for playtesting
