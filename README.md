@@ -24,4 +24,4 @@ Executables and instructions for running can be found [here](https://github.com/
 
 ## Special Thanks
 - Thanks to [@zellio](https://github.com/zellio) for packaging the executables
-- Thanks to Doug Beck, Frank Zegarra, Zachary Elliot, and Benoit Hiller for playtesting
+- Thanks to Doug Beck, Frank Zegarra, Zachary Elliott, and Benoit Hiller for playtesting
