@@ -11,3 +11,9 @@ My entry for Ludum Dare 49 - Unstable
 ## Running from Source
 - Make sure [Rust is installed](https://www.rust-lang.org/tools/install)
 - Download the source and run `cargo run --release`
+
+- If you get an error message about being unable to link -lSDL2, try installing SDL:
+
+```rust
+brew install SDL2
+```
