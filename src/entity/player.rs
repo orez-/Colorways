@@ -112,8 +112,8 @@ impl Player {
 
     pub fn center(&self) -> (i64, i64) {
         let (sx, sy) = self.sub_position();
-        let x = self.x as f64 * TILE_SIZE + PLAYER_WIDTH_HALF;
-        let y = self.y as f64 * TILE_SIZE + PLAYER_HEIGHT_HALF;
+        let x = self.x as f64 * self.step_x + PLAYER_WIDTH_HALF;
+        let y = self.y as f64 * self.step_y + PLAYER_HEIGHT_HALF;
         (x as i64 - sx as i64, y as i64 - sy as i64)
     }
 

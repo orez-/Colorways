@@ -1,4 +1,5 @@
 use crate::app::{HeldKeys, Input};
+use crate::circle_wipe::CircleWipe;
 use crate::entity::Player;
 use crate::view::Transition;
 use opengl_graphics::GlGraphics;
@@ -24,22 +25,42 @@ pub struct MenuView {
     texture: GlTexture,
     completed_levels: Vec<usize>,
     cursor: Player,
+    fade: Option<CircleWipe>,
+    staged_transition: Option<Transition>,
 }
 
 impl MenuView {
     pub fn new(level: usize, completed_levels: Vec<usize>) -> Self {
         let x = level % LEVELS_HORIZONTAL;
         let y = level / LEVELS_HORIZONTAL;
+        let cursor = Player::new_cursor(x as i32, y as i32, LEVEL_SPACING_X, LEVEL_SPACING_Y);
+        let (cx, cy) = cursor.center();
         Self {
             texture: crate::app::load_texture(),
-            cursor: Player::new_cursor(x as i32, y as i32, LEVEL_SPACING_X, LEVEL_SPACING_Y),
+            cursor,
             completed_levels,
+            fade: Some(CircleWipe::new_out(cx as f64, cy as f64)),
+            staged_transition: None,
         }
     }
 
     pub fn render(&self, gl: &mut GlGraphics) {
         let context = Context::new_abs(DISPLAY_WIDTH, DISPLAY_HEIGHT);
+        let cursor_context = context.trans(35., 15.);
         let color = Rectangle::new([0.7, 0.7, 0.7, 1.]);
+
+        let draw_state = if let Some(fade) = &self.fade {
+            fade.render(&cursor_context, gl);
+            DrawState::new_inside()
+        }
+        else { DrawState::default() };
+
+        Rectangle::new([0.3, 0.3, 0.3, 1.0]).draw(
+            [0., 0., DISPLAY_WIDTH, DISPLAY_HEIGHT],
+            &draw_state,
+            context.transform,
+            gl,
+        );
         for y in 0..LEVELS_VERTICAL {
             for x in 0..LEVELS_HORIZONTAL {
                 let left = LEVEL_OFFSET_X + x as f64 * LEVEL_SPACING_X;
@@ -48,7 +69,7 @@ impl MenuView {
                 let bottom = top + LEVEL_HEIGHT;
                 color.draw(
                     rectangle_by_corners(left, top, right, bottom),
-                    &DrawState::default(),
+                    &draw_state,
                     context.transform,
                     gl,
                 );
@@ -65,7 +86,7 @@ impl MenuView {
                 .rect([left, top, 16., 16.])
                 .draw(
                     &self.texture,
-                    &DrawState::default(),
+                    &draw_state,
                     context.transform,
                     gl,
                 );
@@ -76,21 +97,29 @@ impl MenuView {
             .rect(INSTRUCTION_DEST)
             .draw(
                 &self.texture,
-                &DrawState::default(),
+                &draw_state,
                 context.transform,
                 gl,
             );
 
         self.cursor.sprite().draw(
             &self.texture,
-            &DrawState::default(),
-            context.trans(35., 15.).transform,
+            &draw_state,
+            cursor_context.transform,
             gl,
         );
     }
 
     pub fn update(&mut self, args: &UpdateArgs, held_keys: &mut HeldKeys) -> Option<Transition> {
         self.cursor.update(args);
+        if let Some(fade) = &mut self.fade {
+            fade.update(args);
+            if fade.done() {
+                self.fade = None;
+                return self.staged_transition.take();
+            }
+            return None;
+        }
         for input in held_keys.inputs() {
             match input {
                 Input::Navigate(direction) => {
@@ -104,11 +133,17 @@ impl MenuView {
                 }
                 Input::Accept => {
                     let level_id = self.cursor.y as usize * LEVELS_HORIZONTAL + self.cursor.x as usize;
-                    return Some(Transition::Game(level_id));
+                    self.fade_out(Transition::Game(level_id));
                 }
                 _ => (),
             }
         }
         None
+    }
+
+    fn fade_out(&mut self, transition: Transition) {
+        let (x, y) = self.cursor.center();
+        self.fade = Some(CircleWipe::new_in(x as f64, y as f64));
+        self.staged_transition = Some(transition);
     }
 }

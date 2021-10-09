@@ -1,7 +1,7 @@
 use opengl_graphics::GlGraphics;
 use piston_window::{Context, DrawState, Image, Polygon, UpdateArgs};
 use piston_window::draw_state::Blend;
-use crate::app::{Direction, lerp};
+use crate::app::{Direction, lerp4};
 use crate::color::Color;
 use crate::view::{GameAction, GameView};
 
@@ -73,19 +73,10 @@ impl Lightbulb {
     }
     pub fn on_approach(&mut self, _direction: &Direction) -> Option<GameAction> { None }
 
-    pub fn draw_light_base(&self, context: &Context, gl: &mut GlGraphics) {
-        self.draw_light_fan(
-            [0.3, 0.3, 0.3, 1.],
-            &DrawState::default(),
-            context,
-            gl,
-        );
-    }
-
-    pub fn draw_light(&self, context: &Context, gl: &mut GlGraphics) {
+    pub fn draw_light(&self, context: &Context, state: &DrawState, gl: &mut GlGraphics) {
         self.draw_light_fan(
             self.color.as_light_component(),
-            &DrawState::default().blend(Blend::Multiply),
+            &state.blend(Blend::Multiply),
             context,
             gl,
         );
@@ -110,7 +101,7 @@ impl Lightbulb {
 
     fn draw_light_fan(&self, color: [f32; 4], state: &DrawState, context: &Context, gl: &mut GlGraphics) {
         if matches!(self.state, State::Off) { return; }
-        let color = lerp([1., 1., 1., 1.], color, self.light_alpha());
+        let color = lerp4([1., 1., 1., 1.], color, self.light_alpha());
         // Need to triangulate the polygon: opengl doesn't draw concave polygons.
         // Fortunately we axiomatically have a point that can see all vertexes: the sprite center.
         // TODO: look into how to accomplish a "fan"

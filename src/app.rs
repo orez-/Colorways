@@ -6,24 +6,27 @@ use opengl_graphics::Filter;
 use opengl_graphics::GlGraphics;
 use opengl_graphics::Texture as GlTexture;
 
-const AMBIENT_LUM: f32 = 0.4;
+pub fn lerp<T>(left: T, right: T, p: T) -> T
+where T: std::ops::Sub<Output = T> + std::ops::Mul<Output = T> + std::ops::Add<Output = T> + Copy {
+    (right - left) * p + left
+}
 
-pub fn lerp<T>(left: [T; 4], right: [T; 4], p: T) -> [T; 4]
-where T: std::ops::Sub<Output = T> + std::ops::Mul<Output = T> + std::ops::Add<Output = T> + Copy {  // lmao
+pub fn lerp4<T>(left: [T; 4], right: [T; 4], p: T) -> [T; 4]
+where T: std::ops::Sub<Output = T> + std::ops::Mul<Output = T> + std::ops::Add<Output = T> + Copy {
     [
-        (right[0] - left[0]) * p + left[0],
-        (right[1] - left[1]) * p + left[1],
-        (right[2] - left[2]) * p + left[2],
-        (right[3] - left[3]) * p + left[3],
+        lerp(left[0], right[0], p),
+        lerp(left[1], right[1], p),
+        lerp(left[2], right[2], p),
+        lerp(left[3], right[3], p),
     ]
 }
 
-pub fn int_lerp(left: [f64; 4], right: [f64; 4], p: f64) -> [f64; 4] {
+pub fn int_lerp4(left: [f64; 4], right: [f64; 4], p: f64) -> [f64; 4] {
     [
-        ((right[0] - left[0]) * p + left[0]) as i64 as f64,
-        ((right[1] - left[1]) * p + left[1]) as i64 as f64,
-        ((right[2] - left[2]) * p + left[2]) as i64 as f64,
-        ((right[3] - left[3]) * p + left[3]) as i64 as f64,
+        lerp(left[0], right[0], p) as i64 as f64,
+        lerp(left[1], right[1], p) as i64 as f64,
+        lerp(left[2], right[2], p) as i64 as f64,
+        lerp(left[3], right[3], p) as i64 as f64,
     ]
 }
 
@@ -59,7 +62,7 @@ impl App {
     pub fn render(&mut self, args: &RenderArgs, gl: &mut GlGraphics) {
         let v = args.viewport();
         gl.draw(v, |_, gl| {
-            clear([AMBIENT_LUM, AMBIENT_LUM, AMBIENT_LUM, 1.0], gl);
+            clear([0.0, 0.0, 0.0, 1.0], gl);
             self.view.render(gl);
         });
     }

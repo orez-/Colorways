@@ -1,6 +1,7 @@
 mod thought;
 
-use crate::app::{int_lerp, Direction, HeldKeys, Input};
+use crate::app::{int_lerp4, Direction, HeldKeys, Input};
+use crate::circle_wipe::CircleWipe;
 use crate::color::Color;
 use crate::entity::{Entity, Player};
 use crate::room::Room;
@@ -43,11 +44,14 @@ pub struct GameView {
     cursor: Option<Player>,
     state: State,
     thought: Thought,
+    fade: Option<CircleWipe>,
+    staged_transition: Option<Transition>,
 }
 
 impl GameView {
     pub fn new(level_id: usize) -> Self {
         let (room, player, entities, light_color) = Room::new(level_id);
+        let (cx, cy) = player.center();
         let mut game = GameView {
             texture: crate::app::load_texture(),
             player,
@@ -58,6 +62,8 @@ impl GameView {
             cursor: None,
             state: State::Play,
             thought: Thought::new(),
+            fade: Some(CircleWipe::new_out(cx as f64, cy as f64)),
+            staged_transition: None,
         };
         game.set_light_color(light_color);
         game
@@ -93,29 +99,25 @@ impl GameView {
         (xs[1], ys[1])
     }
 
-    fn render_lights(&self, gl: &mut GlGraphics, context: &Context) {
+    fn render_lights(&self, gl: &mut GlGraphics, draw_state: &DrawState, context: &Context) {
         let lights: Vec<_> = self.entities.iter().filter_map(|e| {
             if let Entity::Lightbulb(bulb) = e { Some(bulb) }
             else { None }
         }).collect();
 
-        // for light in &lights {
-        //     light.draw_light_base(context, gl);
-        // }
-
         for light in &lights {
-            light.draw_light(context, gl);
+            light.draw_light(context, draw_state, gl);
         }
     }
 
-    fn render_game(&self, gl: &mut GlGraphics) {
+    fn render_game(&self, draw_state: &DrawState, gl: &mut GlGraphics) {
         // Camera
         let context = self.camera_context();
 
         // Action
         self.room.render(
             &self.texture,
-            &DrawState::default(),
+            &draw_state,
             &context,
             gl,
         );
@@ -123,7 +125,7 @@ impl GameView {
         for entity in &self.entities {
             entity.sprite().draw(
                 &self.texture,
-                &DrawState::default(),
+                &draw_state,
                 context.transform,
                 gl,
             );
@@ -131,41 +133,51 @@ impl GameView {
 
         self.player.sprite().draw(
             &self.texture,
-            &DrawState::default(),
+            &draw_state,
             context.transform,
             gl,
         );
 
         // Lights
-        self.render_lights(gl, &context);
+        self.render_lights(gl, &draw_state, &context);
 
         // Thoughts
         let (px, py) = self.player.pixel_coord();
         self.thought.render(
             &self.texture,
-            &DrawState::default(),
+            &draw_state,
             &context.trans(px, py),
             gl,
         );
     }
 
     pub fn render(&self, gl: &mut GlGraphics) {
-        self.render_game(gl);
+        let context = self.camera_context();
+        let abs_context = self.absolute_context();
+        let cursor_context = abs_context.trans(46., 107.);
+
+        let draw_state = if let Some(fade) = &self.fade {
+            let fade_context = if self.cursor.is_some() { cursor_context } else { context };
+            fade.render(&fade_context, gl);
+            DrawState::new_inside()
+        }
+        else { DrawState::default() };
+
+        self.render_game(&draw_state, gl);
 
         if let State::Win(progress) = self.state {
-            let abs_context = self.absolute_context();
-            let dest = int_lerp(LEVEL_COMPLETE_START_DEST, LEVEL_COMPLETE_END_DEST, progress);
+            let dest = int_lerp4(LEVEL_COMPLETE_START_DEST, LEVEL_COMPLETE_END_DEST, progress);
             Image::new().src_rect(LEVEL_COMPLETE_SRC).rect(dest).draw(
                 &self.texture,
-                &DrawState::default(),
+                &draw_state,
                 abs_context.transform,
                 gl,
             );
             if let Some(cursor) = &self.cursor {
                 cursor.sprite().draw(
                     &self.texture,
-                    &DrawState::default(),
-                    abs_context.trans(46., 107.).transform,
+                    &draw_state,
+                    cursor_context.transform,
                     gl,
                 );
             }
@@ -178,8 +190,18 @@ impl GameView {
             entity.update(args);
         }
         self.thought.update(args);
+
+        if let Some(fade) = &mut self.fade {
+            fade.update(args);
+            if fade.done() {
+                self.fade = None;
+                return self.staged_transition.take();
+            }
+            return None;
+        }
+
         match &mut self.state {
-            State::Play => self.update_play(args, held_keys),
+            State::Play => self.update_play(held_keys),
             State::Win(progress) => {
                 if *progress < 1. {
                     *progress = *progress + args.dt * 5.;
@@ -188,34 +210,12 @@ impl GameView {
                         self.cursor = Some(Player::new(0, 0));
                     }
                 }
-                if let Some(cursor) = &mut self.cursor {
-                    cursor.update(args);
-                    for input in held_keys.inputs() {
-                        if !cursor.can_walk() {
-                            break;
-                        }
-                        match input {
-                            Input::Navigate(direction @ Direction::North) if cursor.y == 1 => {
-                                cursor.walk(&direction);
-                            }
-                            Input::Navigate(direction @ Direction::South) if cursor.y == 0 => {
-                                cursor.walk(&direction);
-                            }
-                            Input::Accept => match cursor.y {
-                                0 => return Some(Transition::Game(self.level_id + 1)),
-                                1 => return Some(Transition::Menu(self.level_id)),
-                                _ => (),
-                            },
-                            _ => (),
-                        }
-                    }
-                }
-                None
+                self.update_win(args, held_keys)
             }
         }
     }
 
-    fn update_play(&mut self, _args: &UpdateArgs, held_keys: &mut HeldKeys) -> Option<Transition> {
+    fn update_play(&mut self, held_keys: &mut HeldKeys) -> Option<Transition> {
         let mut action = None;  // TODO: should probably be a vec? eh.
         for input in held_keys.inputs() {
             match input {
@@ -245,7 +245,7 @@ impl GameView {
                         self.player.walk(&direction);
                     }
                 }
-                Input::Reject => { return Some(Transition::Menu(self.level_id)); }
+                Input::Reject => { self.fade_out(Transition::Menu(self.level_id)); }
                 Input::Help => { self.thought.think(); }
                 _ => (),
             }
@@ -268,6 +268,34 @@ impl GameView {
                 GameAction::Stop => (),
             }
         }
+        None
+    }
+
+    fn update_win(&mut self, args: &UpdateArgs, held_keys: &mut HeldKeys) -> Option<Transition> {
+        let mut transition = None;
+        if let Some(cursor) = &mut self.cursor {
+            cursor.update(args);
+            for input in held_keys.inputs() {
+                if !cursor.can_walk() {
+                    break;
+                }
+                match input {
+                    Input::Navigate(direction @ Direction::North) if cursor.y == 1 => {
+                        cursor.walk(&direction);
+                    }
+                    Input::Navigate(direction @ Direction::South) if cursor.y == 0 => {
+                        cursor.walk(&direction);
+                    }
+                    Input::Accept => match cursor.y {
+                        0 => { transition = Some(Transition::Game(self.level_id + 1)); }
+                        1 => { transition = Some(Transition::Menu(self.level_id)); }
+                        _ => (),
+                    },
+                    _ => (),
+                }
+            }
+        };
+        if let Some(t) = transition { self.fade_out(t); }
         None
     }
 
@@ -299,5 +327,11 @@ impl GameView {
     pub fn entity_at(&self, x: i32, y: i32) -> Option<&Entity> {
         let idx = self.entity_id_at(x, y)?;
         Some(&self.entities[idx])
+    }
+
+    fn fade_out(&mut self, transition: Transition) {
+        let (x, y) = self.cursor.as_ref().unwrap_or(&self.player).center();
+        self.fade = Some(CircleWipe::new_in(x as f64, y as f64));
+        self.staged_transition = Some(transition);
     }
 }

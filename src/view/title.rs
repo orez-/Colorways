@@ -2,6 +2,7 @@ use opengl_graphics::GlGraphics;
 use opengl_graphics::Texture as GlTexture;
 use piston_window::{Context, DrawState, Image, Transformed, UpdateArgs};
 use crate::app::{Direction, HeldKeys, Input};
+use crate::circle_wipe::CircleWipe;
 use crate::color::Color;
 use crate::entity::{Entity, Player};
 use crate::room::Room;
@@ -38,6 +39,8 @@ pub struct TitleView {
     entities: Vec<Entity>,
     light_color: Color,
     state: State,
+    fade: Option<CircleWipe>,
+    staged_transition: Option<Transition>,
 }
 
 impl TitleView {
@@ -48,35 +51,45 @@ impl TitleView {
             cursor: Player::new_cursor(0, 0, 16., 16.),
             room, entities, light_color: Color::Gray,
             state: State::InputCheck,
+            fade: None,
+            staged_transition: None,
         };
         title.set_light_color(light_color);
         title
     }
 
-    fn render_lights(&self, gl: &mut GlGraphics, context: &Context) {
+    fn render_lights(&self, gl: &mut GlGraphics, context: &Context, state: &DrawState) {
         let lights: Vec<_> = self.entities.iter().filter_map(|e| {
             if let Entity::Lightbulb(bulb) = e { Some(bulb) }
             else { None }
         }).collect();
 
         for light in &lights {
-            light.draw_light(context, gl);
+            light.draw_light(context, state, gl);
         }
     }
 
     pub fn render(&self, gl: &mut GlGraphics) {
         let context = Context::new_abs(DISPLAY_WIDTH, DISPLAY_HEIGHT);
         let room_context = context.trans(ROOM_OFFSET_X, ROOM_OFFSET_Y);
+        let cursor_context = room_context.trans(80., 112.);
+
+        let draw_state = if let Some(fade) = &self.fade {
+            fade.render(&cursor_context, gl);
+            DrawState::new_inside()
+        }
+        else { DrawState::default() };
+
         self.room.render(
             &self.texture,
-            &DrawState::default(),
+            &draw_state,
             &room_context,
             gl,
         );
         for entity in &self.entities {
             entity.sprite().draw(
                 &self.texture,
-                &DrawState::default(),
+                &draw_state,
                 room_context.transform,
                 gl,
             );
@@ -84,7 +97,7 @@ impl TitleView {
         let mut draw_sprite = |src: [f64; 4], dest: [f64; 4]| {
             Image::new().src_rect(src).rect(dest).draw(
                 &self.texture,
-                &DrawState::default(),
+                &draw_state,
                 context.transform,
                 gl,
             );
@@ -102,23 +115,32 @@ impl TitleView {
                 draw_sprite(AUTHOR_SRC, AUTHOR_DEST);
                 self.cursor.sprite().draw(
                     &self.texture,
-                    &DrawState::default(),
-                    room_context.trans(80., 112.).transform,
+                    &draw_state,
+                    cursor_context.transform,
                     gl,
                 );
             },
         }
-        self.render_lights(gl, &room_context);
+        self.render_lights(gl, &room_context, &draw_state);
     }
 
     pub fn update(&mut self, args: &UpdateArgs, held_keys: &mut HeldKeys) -> Option<Transition> {
         for entity in self.entities.iter_mut() {
             entity.update(args);
         }
-        match self.state {
-            State::InputCheck => { self.update_input_check(args, held_keys); None },
-            State::Menu => { self.update_menu(args, held_keys) },
+        if let Some(fade) = &mut self.fade {
+            fade.update(args);
+            if fade.done() {
+                self.fade = None;
+                return self.staged_transition.take();
+            }
+            return None;
         }
+        match &self.state {
+            State::InputCheck => { self.update_input_check(args, held_keys); },
+            State::Menu => { self.update_menu(args, held_keys); },
+        }
+        None
     }
 
     fn update_input_check(&mut self, _args: &UpdateArgs, held_keys: &mut HeldKeys) {
@@ -129,7 +151,7 @@ impl TitleView {
         }
     }
 
-    fn update_menu(&mut self, args: &UpdateArgs, held_keys: &mut HeldKeys) -> Option<Transition> {
+    fn update_menu(&mut self, args: &UpdateArgs, held_keys: &mut HeldKeys) {
         self.cursor.update(args);
         for input in held_keys.inputs() {
             match input {
@@ -142,8 +164,8 @@ impl TitleView {
                     self.cursor.walk(&direction);
                 },
                 Input::Accept => match self.cursor.y {
-                    0 => { return Some(Transition::Game(0)); },
-                    1 => { return Some(Transition::Menu(0)); },
+                    0 => { self.fade_out(Transition::Game(0)); },
+                    1 => { self.fade_out(Transition::Menu(0)); },
                     _ => (),
                 },
                 _ => ()
@@ -156,10 +178,15 @@ impl TitleView {
             _ => unreachable!(),
         };
         self.set_light_color(color);
-        None
     }
 
-    pub fn set_light_color(&mut self, color: Color) {
+    fn fade_out(&mut self, transition: Transition) {
+        let (x, y) = self.cursor.center();
+        self.fade = Some(CircleWipe::new_in(x as f64, y as f64));
+        self.staged_transition = Some(transition);
+    }
+
+    fn set_light_color(&mut self, color: Color) {
         if self.light_color == color { return; }
         for entity in self.entities.iter_mut() {
             if let Entity::Lightbulb(bulb) = entity {
