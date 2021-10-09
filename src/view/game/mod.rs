@@ -1,12 +1,15 @@
-use opengl_graphics::GlGraphics;
-use opengl_graphics::Texture as GlTexture;
-use piston_window::{Context, DrawState, Image, UpdateArgs, Transformed};
-use piston_window::draw_state::Blend;
-use crate::app::{Direction, HeldKeys, Input, int_lerp};
+mod thought;
+
+use crate::app::{int_lerp, Direction, HeldKeys, Input};
 use crate::color::Color;
 use crate::entity::{Entity, Player};
 use crate::room::Room;
+use crate::view::game::thought::Thought;
 use crate::view::Transition;
+use opengl_graphics::GlGraphics;
+use opengl_graphics::Texture as GlTexture;
+use piston_window::draw_state::Blend;
+use piston_window::{Context, DrawState, Image, Transformed, UpdateArgs};
 
 const DISPLAY_WIDTH: f64 = 200.;
 const DISPLAY_HEIGHT: f64 = 200.;
@@ -39,6 +42,7 @@ pub struct GameView {
     level_id: usize,
     cursor: Option<Player>,
     state: State,
+    thought: Thought,
 }
 
 impl GameView {
@@ -53,6 +57,7 @@ impl GameView {
             level_id,
             cursor: None,
             state: State::Play,
+            thought: Thought::new(),
         };
         game.set_light_color(light_color);
         game
@@ -73,8 +78,16 @@ impl GameView {
     // TODO: if the level's too small probably center it instead
     fn camera(&self) -> (i64, i64) {
         let (x, y) = self.player.center();
-        let mut xs = vec![DISPLAY_WIDTH_HALF, x, self.room.pixel_width() - DISPLAY_WIDTH_HALF];
-        let mut ys = vec![DISPLAY_HEIGHT_HALF, y, self.room.pixel_height() - DISPLAY_HEIGHT_HALF];
+        let mut xs = vec![
+            DISPLAY_WIDTH_HALF,
+            x,
+            self.room.pixel_width() - DISPLAY_WIDTH_HALF,
+        ];
+        let mut ys = vec![
+            DISPLAY_HEIGHT_HALF,
+            y,
+            self.room.pixel_height() - DISPLAY_HEIGHT_HALF,
+        ];
         xs.sort();
         ys.sort();
         (xs[1], ys[1])
@@ -125,6 +138,15 @@ impl GameView {
 
         // Lights
         self.render_lights(gl, &context);
+
+        // Thoughts
+        let (px, py) = self.player.pixel_coord();
+        self.thought.render(
+            &self.texture,
+            &DrawState::default(),
+            &context.trans(px, py),
+            gl,
+        );
     }
 
     pub fn render(&self, gl: &mut GlGraphics) {
@@ -133,15 +155,12 @@ impl GameView {
         if let State::Win(progress) = self.state {
             let abs_context = self.absolute_context();
             let dest = int_lerp(LEVEL_COMPLETE_START_DEST, LEVEL_COMPLETE_END_DEST, progress);
-            Image::new()
-                .src_rect(LEVEL_COMPLETE_SRC)
-                .rect(dest)
-                .draw(
-                    &self.texture,
-                    &DrawState::default(),
-                    abs_context.transform,
-                    gl,
-                );
+            Image::new().src_rect(LEVEL_COMPLETE_SRC).rect(dest).draw(
+                &self.texture,
+                &DrawState::default(),
+                abs_context.transform,
+                gl,
+            );
             if let Some(cursor) = &self.cursor {
                 cursor.sprite().draw(
                     &self.texture,
@@ -158,6 +177,7 @@ impl GameView {
         for entity in self.entities.iter_mut() {
             entity.update(args);
         }
+        self.thought.update(args);
         match &mut self.state {
             State::Play => self.update_play(args, held_keys),
             State::Win(progress) => {
@@ -171,20 +191,20 @@ impl GameView {
                 if let Some(cursor) = &mut self.cursor {
                     cursor.update(args);
                     for input in held_keys.inputs() {
-                        if !cursor.can_walk() { break; }
+                        if !cursor.can_walk() {
+                            break;
+                        }
                         match input {
                             Input::Navigate(direction @ Direction::North) if cursor.y == 1 => {
                                 cursor.walk(&direction);
-                            },
+                            }
                             Input::Navigate(direction @ Direction::South) if cursor.y == 0 => {
                                 cursor.walk(&direction);
-                            },
-                            Input::Accept => {
-                                match cursor.y {
-                                    0 => return Some(Transition::Game(self.level_id + 1)),
-                                    1 => return Some(Transition::Menu(self.level_id)),
-                                    _ => (),
-                                }
+                            }
+                            Input::Accept => match cursor.y {
+                                0 => return Some(Transition::Game(self.level_id + 1)),
+                                1 => return Some(Transition::Menu(self.level_id)),
+                                _ => (),
                             },
                             _ => (),
                         }
@@ -200,11 +220,13 @@ impl GameView {
         for input in held_keys.inputs() {
             match input {
                 Input::Navigate(direction) => {
+                    self.thought.dismiss();
                     self.player.face(&direction);
                     let (nx, ny) = direction.from(self.player.x, self.player.y);
                     if self.player.can_walk() && self.tile_is_passable(nx, ny) {
                         if let Some(entity_id) = self.entity_id_at(nx, ny) {
-                            if let Some(approach_action) = self.entities[entity_id].is_approachable(&direction, self) {
+                            if let Some(approach_action) =
+                                self.entities[entity_id].is_approachable(&direction, self) {
                                 if matches!(approach_action, GameAction::Stop) { continue; }
                                 if let GameAction::DestroyBoth(idx1, _) = approach_action {
                                     action = Some(GameAction::DestroyBoth(idx1, entity_id));
@@ -214,28 +236,35 @@ impl GameView {
                             // borrow checker shenanigans
                             match &self.entities[entity_id] {
                                 Entity::Block(block)
-                                if self.tile_in_light(block.x, block.y, &block.color) => (),
-                                _ => { action = self.entities[entity_id].on_approach(&direction); },
+                                    if self.tile_in_light(block.x, block.y, &block.color) => (),
+                                _ => {
+                                    action = self.entities[entity_id].on_approach(&direction);
+                                }
                             }
                         }
                         self.player.walk(&direction);
                     }
-                },
-                Input::Reject => { return Some(Transition::Menu(self.level_id)); },
+                }
+                Input::Reject => { return Some(Transition::Menu(self.level_id)); }
+                Input::Help => { self.thought.think(); }
                 _ => (),
             }
         }
         if let Some(action) = action {
             match action {
-                GameAction::ColorChange(color) => { self.set_light_color(color); },
+                GameAction::ColorChange(color) => { self.set_light_color(color); }
                 GameAction::Win => {
                     self.state = State::Win(0.);
                     return Some(Transition::Win(self.level_id));
-                },
+                }
                 GameAction::DestroyBoth(idx1, idx2) => {
                     let mut idx = 0;
-                    self.entities.retain(|_| { let m = idx1 != idx && idx2 != idx; idx += 1; m });
-                },
+                    self.entities.retain(|_| {
+                        let m = idx1 != idx && idx2 != idx;
+                        idx += 1;
+                        m
+                    });
+                }
                 GameAction::Stop => (),
             }
         }
@@ -264,8 +293,7 @@ impl GameView {
     }
 
     pub fn entity_id_at(&self, x: i32, y: i32) -> Option<usize> {
-        self.entities.iter()
-            .position(|e| e.x() == x && e.y() == y)
+        self.entities.iter().position(|e| e.x() == x && e.y() == y)
     }
 
     pub fn entity_at(&self, x: i32, y: i32) -> Option<&Entity> {

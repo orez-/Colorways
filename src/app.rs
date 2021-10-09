@@ -117,6 +117,7 @@ pub enum Input {
     Navigate(Direction),
     Accept,
     Reject,
+    Help,
 }
 
 pub struct HeldKeys {
@@ -155,6 +156,7 @@ impl HeldKeys {
                 Button::Keyboard(Key::D | Key::Right) => Input::Navigate(Direction::East),
                 Button::Keyboard(Key::Space | Key::Z) => Input::Accept,
                 Button::Keyboard(Key::Backspace) => Input::Reject,
+                Button::Keyboard(Key::H) => Input::Help,
                 _ => continue,
             };
             // Evict inputs which should not turbo

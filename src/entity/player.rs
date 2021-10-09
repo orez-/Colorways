@@ -95,14 +95,19 @@ impl Player {
         }
     }
 
-    pub fn sprite(&self) -> Image {
-        let src = self.sprite_src();
+    pub fn pixel_coord(&self) -> (f64, f64) {
         let (sx, sy) = self.sub_position();
         let x = self.x as f64 * self.step_x;
         let y = self.y as f64 * self.step_y;
+        (x - sx, y - sy)
+    }
+
+    pub fn sprite(&self) -> Image {
+        let src = self.sprite_src();
+        let (x, y) = self.pixel_coord();
         Image::new()
             .src_rect(src)
-            .rect([x - sx, y - sy, PLAYER_WIDTH, PLAYER_HEIGHT])
+            .rect([x, y, PLAYER_WIDTH, PLAYER_HEIGHT])
     }
 
     pub fn center(&self) -> (i64, i64) {
