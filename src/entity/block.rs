@@ -66,22 +66,21 @@ impl Block {
         (0., 0.)
     }
 
-    pub fn is_approachable(&self, direction: &Direction, view: &GameView) -> Option<GameAction> {
-        if view.tile_in_light(self.x, self.y, &self.color) { return None; }
+    pub fn on_approach(&self, entity_id: usize, direction: &Direction, view: &GameView) -> GameAction {
+        if view.tile_in_light(self.x, self.y, &self.color) { return GameAction::Walk; }
         let (nx, ny) = direction.from(self.x, self.y);
-        if !view.tile_is_passable(nx, ny) { return Some(GameAction::Stop); }
-        match view.entity_at(nx, ny)? {
-            Entity::Water(_) => Some(GameAction::DestroyBoth(view.entity_id_at(nx, ny)?, 0)),
-            _ => Some(GameAction::Stop),
+        if !view.tile_is_passable(nx, ny) { return GameAction::Stop; }
+        match view.entity_at(nx, ny) {
+            Some(Entity::Water(_)) => {
+                let water_id = view.entity_id_at(nx, ny).unwrap();
+                GameAction::Sink(entity_id, water_id, self.color.clone())
+            }
+            Some(_) => GameAction::Stop,
+            None => GameAction::Push(entity_id),
         }
     }
 
-    pub fn on_approach(&mut self, direction: &Direction) -> Option<GameAction> {
-        self.push(direction);
-        None
-    }
-
-    fn push(&mut self, direction: &Direction) {
+    pub fn push(&mut self, direction: &Direction) {
         match direction {
             Direction::North => self.y -= 1,
             Direction::West => self.x -= 1,

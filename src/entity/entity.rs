@@ -34,23 +34,13 @@ impl Entity {
         }
     }
 
-    pub fn is_approachable(&self, direction: &Direction, game: &GameView) -> Option<GameAction> {
+    pub fn on_approach(&self, entity_id: usize, direction: &Direction, view: &GameView) -> GameAction {
         match self {
-            Block(e) => e.is_approachable(direction, game),
-            Exit(e) => e.is_approachable(direction, game),
-            Lightbulb(e) => e.is_approachable(direction, game),
-            LightSwitch(e) => e.is_approachable(direction, game),
-            Water(e) => e.is_approachable(direction, game),
-        }
-    }
-
-    pub fn on_approach(&mut self, direction: &Direction) -> Option<GameAction> {
-        match self {
-            Block(e) => e.on_approach(direction),
-            Exit(e) => e.on_approach(direction),
-            Lightbulb(e) => e.on_approach(direction),
-            LightSwitch(e) => e.on_approach(direction),
-            Water(e) => e.on_approach(direction),
+            Block(e) => e.on_approach(entity_id, direction, view),
+            Exit(e) => e.on_approach(entity_id, direction, view),
+            Lightbulb(e) => e.on_approach(entity_id, direction, view),
+            LightSwitch(e) => e.on_approach(entity_id, direction, view),
+            Water(e) => e.on_approach(entity_id, direction, view),
         }
     }
 

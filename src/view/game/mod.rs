@@ -3,13 +3,12 @@ mod thought;
 use crate::app::{int_lerp4, Direction, HeldKeys, Input};
 use crate::circle_wipe::CircleWipe;
 use crate::color::Color;
-use crate::entity::{Entity, Player};
+use crate::entity::{Block, Entity, Player, Water};
 use crate::room::Room;
 use crate::view::game::thought::Thought;
 use crate::view::Transition;
 use opengl_graphics::GlGraphics;
 use opengl_graphics::Texture as GlTexture;
-use piston_window::draw_state::Blend;
 use piston_window::{Context, DrawState, Image, Transformed, UpdateArgs};
 
 const DISPLAY_WIDTH: f64 = 200.;
@@ -24,9 +23,23 @@ const LEVEL_COMPLETE_END_DEST: [f64; 4] = [36., 40., 128., 112.];
 #[derive(Debug)]
 pub enum GameAction {
     Stop,
+    Walk,
+    Push(usize),
     ColorChange(Color),
     Win,
-    DestroyBoth(usize, usize),
+    Sink(usize, usize, Color),
+}
+
+enum HistoryEventType {
+    Walk,
+    Push,
+    Sink(Color),
+    ColorChange(Color),
+}
+
+struct HistoryEvent {
+    direction: Direction,
+    event_type: HistoryEventType,
 }
 
 pub enum State {
@@ -44,6 +57,7 @@ pub struct GameView {
     cursor: Option<Player>,
     state: State,
     thought: Thought,
+    history: Vec<HistoryEvent>,
     fade: Option<CircleWipe>,
     staged_transition: Option<Transition>,
 }
@@ -62,6 +76,7 @@ impl GameView {
             cursor: None,
             state: State::Play,
             thought: Thought::new(),
+            history: Vec::new(),
             fade: Some(CircleWipe::new_out(cx as f64, cy as f64)),
             staged_transition: None,
         };
@@ -216,7 +231,6 @@ impl GameView {
     }
 
     fn update_play(&mut self, held_keys: &mut HeldKeys) -> Option<Transition> {
-        let mut action = None;  // TODO: should probably be a vec? eh.
         for input in held_keys.inputs() {
             match input {
                 Input::Navigate(direction) => {
@@ -224,49 +238,64 @@ impl GameView {
                     self.player.face(&direction);
                     let (nx, ny) = direction.from(self.player.x, self.player.y);
                     if self.player.can_walk() && self.tile_is_passable(nx, ny) {
-                        if let Some(entity_id) = self.entity_id_at(nx, ny) {
-                            if let Some(approach_action) =
-                                self.entities[entity_id].is_approachable(&direction, self) {
-                                if matches!(approach_action, GameAction::Stop) { continue; }
-                                if let GameAction::DestroyBoth(idx1, _) = approach_action {
-                                    action = Some(GameAction::DestroyBoth(idx1, entity_id));
-                                    continue;
-                                }
-                            }
-                            // borrow checker shenanigans
-                            match &self.entities[entity_id] {
-                                Entity::Block(block)
-                                    if self.tile_in_light(block.x, block.y, &block.color) => (),
-                                _ => {
-                                    action = self.entities[entity_id].on_approach(&direction);
-                                }
-                            }
+                        let action = if let Some(entity_id) = self.entity_id_at(nx, ny) {
+                            self.entities[entity_id].on_approach(entity_id, &direction, self)
                         }
-                        self.player.walk(&direction);
+                        else { GameAction::Walk };
+                        return self.handle_action(&direction, action);
                     }
                 }
-                Input::Reject => { self.fade_out(Transition::Menu(self.level_id)); }
+                Input::Accept => { self.fade_out(Transition::Menu(self.level_id)); }
+                Input::Reject => { self.undo(); }
                 Input::Help => { self.thought.think(); }
-                _ => (),
             }
         }
-        if let Some(action) = action {
-            match action {
-                GameAction::ColorChange(color) => { self.set_light_color(color); }
-                GameAction::Win => {
-                    self.state = State::Win(0.);
-                    return Some(Transition::Win(self.level_id));
-                }
-                GameAction::DestroyBoth(idx1, idx2) => {
-                    let mut idx = 0;
-                    self.entities.retain(|_| {
-                        let m = idx1 != idx && idx2 != idx;
-                        idx += 1;
-                        m
-                    });
-                }
-                GameAction::Stop => (),
+        None
+    }
+
+    fn handle_action(&mut self, direction: &Direction, action: GameAction) -> Option<Transition> {
+        if matches!(action, GameAction::Stop) { return None; }
+        self.player.walk(&direction);
+        match action {
+            GameAction::Walk => {
+                self.history.push(HistoryEvent {
+                    direction: direction.reverse(),
+                    event_type: HistoryEventType::Walk,
+                });
+            },
+            GameAction::ColorChange(color) => {
+                self.history.push(HistoryEvent {
+                    direction: direction.reverse(),
+                    event_type: HistoryEventType::ColorChange(self.light_color.clone()),
+                });
+                self.set_light_color(color);
             }
+            GameAction::Win => {
+                self.state = State::Win(0.);
+                return Some(Transition::Win(self.level_id));
+            }
+            GameAction::Sink(idx1, idx2, color) => {
+                self.history.push(HistoryEvent {
+                    direction: direction.reverse(),
+                    event_type: HistoryEventType::Sink(color),
+                });
+                let mut idx = 0;
+                self.entities.retain(|_| {
+                    let m = idx1 != idx && idx2 != idx;
+                    idx += 1;
+                    m
+                });
+            }
+            GameAction::Push(entity_id) => {
+                self.history.push(HistoryEvent {
+                    direction: direction.reverse(),
+                    event_type: HistoryEventType::Push,
+                });
+                if let Entity::Block(block) = &mut self.entities[entity_id] {
+                    block.push(direction);
+                } else { unreachable!(); }
+            }
+            GameAction::Stop => unreachable!(),
         }
         None
     }
@@ -329,9 +358,43 @@ impl GameView {
         Some(&self.entities[idx])
     }
 
+    fn entity_at_mut(&mut self, x: i32, y: i32) -> Option<&mut Entity> {
+        let idx = self.entity_id_at(x, y)?;
+        Some(&mut self.entities[idx])
+    }
+
     fn fade_out(&mut self, transition: Transition) {
         let (x, y) = self.cursor.as_ref().unwrap_or(&self.player).center();
         self.fade = Some(CircleWipe::new_in(x as f64, y as f64));
         self.staged_transition = Some(transition);
+    }
+
+    fn undo(&mut self) {
+        let event = match self.history.pop() {
+            Some(value) => value,
+            None => return,
+        };
+        let px = self.player.x;
+        let py = self.player.y;
+        match event.event_type {
+            HistoryEventType::Walk => (),
+            HistoryEventType::Push => {
+                let (bx, by) = event.direction.reverse().from(px, py);
+                if let Some(Entity::Block(block)) = self.entity_at_mut(bx, by) {
+                    block.x = px;
+                    block.y = py;
+                }
+            },
+            HistoryEventType::Sink(color) => {
+                let (bx, by) = event.direction.reverse().from(px, py);
+                self.entities.push(Entity::Block(Block::new(px, py, color)));
+                self.entities.push(Entity::Water(Water::new(bx, by)));
+            },
+            HistoryEventType::ColorChange(color) => {
+                // TODO: too gentle! hard switch!
+                self.set_light_color(color);
+            },
+        }
+        self.player.undo(&event.direction);
     }
 }

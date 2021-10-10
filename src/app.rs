@@ -113,6 +113,15 @@ impl Direction {
             Direction::East => (x + 1, y),
         }
     }
+
+    pub fn reverse(&self) -> Direction {
+        match self {
+            Direction::North => Direction::South,
+            Direction::West => Direction::East,
+            Direction::East => Direction::West,
+            Direction::South => Direction::North,
+        }
+    }
 }
 
 #[derive(PartialEq)]
@@ -157,7 +166,7 @@ impl HeldKeys {
                 Button::Keyboard(Key::A | Key::Left) => Input::Navigate(Direction::West),
                 Button::Keyboard(Key::S | Key::Down) => Input::Navigate(Direction::South),
                 Button::Keyboard(Key::D | Key::Right) => Input::Navigate(Direction::East),
-                Button::Keyboard(Key::Space | Key::Z) => Input::Accept,
+                Button::Keyboard(Key::Space | Key::Return | Key::Z) => Input::Accept,
                 Button::Keyboard(Key::Backspace) => Input::Reject,
                 Button::Keyboard(Key::H) => Input::Help,
                 _ => continue,

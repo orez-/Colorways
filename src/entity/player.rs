@@ -145,4 +145,15 @@ impl Player {
     pub fn can_walk(&self) -> bool {
         matches!(&self.state, State::Idle)
     }
+
+    pub fn undo(&mut self, direction: &Direction) {
+        let (nx, ny) = direction.from(self.x, self.y);
+        self.x = nx;
+        self.y = ny;
+        match direction {
+            Direction::West => { self.face_left = false; }
+            Direction::East => { self.face_left = true; }
+            _ => (),
+        }
+    }
 }

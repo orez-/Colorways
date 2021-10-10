@@ -26,10 +26,7 @@ impl LightSwitch {
     }
 
     pub fn update(&mut self, _args: &UpdateArgs) {}
-    pub fn is_approachable(&self, _direction: &Direction, _game: &GameView) -> Option<GameAction> {
-        None
-    }
-    pub fn on_approach(&mut self, _direction: &Direction) -> Option<GameAction> {
-        Some(GameAction::ColorChange(self.color.clone()))
+    pub fn on_approach(&self, _entity_id: usize, _direction: &Direction, _game: &GameView) -> GameAction {
+        GameAction::ColorChange(self.color.clone())
     }
 }
