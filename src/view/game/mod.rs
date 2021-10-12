@@ -3,7 +3,7 @@ mod thought;
 use crate::app::{int_lerp4, Direction, HeldKeys, Input};
 use crate::circle_wipe::CircleWipe;
 use crate::color::Color;
-use crate::entity::{Block, Entity, Player, Water};
+use crate::entity::{Block, Entity, IEntity, Player, Water};
 use crate::room::Room;
 use crate::view::game::thought::Thought;
 use crate::view::Transition;

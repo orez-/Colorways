@@ -3,6 +3,7 @@ use piston_window::{Context, DrawState, Image, Polygon, UpdateArgs};
 use piston_window::draw_state::Blend;
 use crate::app::{Direction, lerp4};
 use crate::color::Color;
+use crate::entity::IEntity;
 use crate::view::{GameAction, GameView};
 
 const TILE_SIZE: f64 = 16.;
@@ -31,45 +32,6 @@ pub struct Lightbulb {
 impl Lightbulb {
     pub fn new(x: i32, y: i32, color: Color, light_polygon: Vec<[f64; 2]>) -> Self {
         Self { x, y, color, state: State::Off, light_polygon }
-    }
-
-    pub fn sprite(&self) -> Image {
-        let src = match self.state {
-            State::On => LIGHTBULB_ON,
-            State::Off => LIGHTBULB_OFF,
-            State::Rising(p) if p <= 0.2 => { LIGHTBULB_OFF },
-            State::Rising(p) if p <= 0.5 => { LIGHTBULB_RISING_1 },
-            State::Rising(p) if p <= 0.8 => { LIGHTBULB_RISING_2 },
-            State::Rising(_) => { LIGHTBULB_ON },
-            State::Falling(p) if p <= 0.2 => { LIGHTBULB_FALLING_1 },
-            State::Falling(p) if p <= 0.4 => { LIGHTBULB_FALLING_2 },
-            State::Falling(_) => { LIGHTBULB_OFF },
-        };
-        let x = self.x as f64 * TILE_SIZE;
-        let y = self.y as f64 * TILE_SIZE;
-        Image::new_color(self.color.as_component())
-            .src_rect(src)
-            .rect([x, y, TILE_SIZE, TILE_SIZE])
-    }
-
-    pub fn update(&mut self, args: &UpdateArgs) {
-        match self.state {
-            State::On | State::Off => (),
-            State::Rising(p) => {
-                let p2 = p + args.dt * 5.;
-                if p2 >= 1. { self.state = State::On; }
-                else { self.state = State::Rising(p2); }
-            },
-            State::Falling(p) => {
-                let p2 = p + args.dt * 5.;
-                if p2 >= 1. { self.state = State::Off; }
-                else { self.state = State::Falling(p2); }
-            },
-        }
-    }
-
-    pub fn on_approach(&self, _entity_id: usize, _direction: &Direction, _game: &GameView) -> GameAction {
-        GameAction::Stop
     }
 
     pub fn draw_light(&self, context: &Context, state: &DrawState, gl: &mut GlGraphics) {
@@ -114,5 +76,46 @@ impl Lightbulb {
                 gl,
             );
         }
+    }
+}
+
+impl IEntity for Lightbulb {
+    fn sprite(&self) -> Image {
+        let src = match self.state {
+            State::On => LIGHTBULB_ON,
+            State::Off => LIGHTBULB_OFF,
+            State::Rising(p) if p <= 0.2 => { LIGHTBULB_OFF },
+            State::Rising(p) if p <= 0.5 => { LIGHTBULB_RISING_1 },
+            State::Rising(p) if p <= 0.8 => { LIGHTBULB_RISING_2 },
+            State::Rising(_) => { LIGHTBULB_ON },
+            State::Falling(p) if p <= 0.2 => { LIGHTBULB_FALLING_1 },
+            State::Falling(p) if p <= 0.4 => { LIGHTBULB_FALLING_2 },
+            State::Falling(_) => { LIGHTBULB_OFF },
+        };
+        let x = self.x as f64 * TILE_SIZE;
+        let y = self.y as f64 * TILE_SIZE;
+        Image::new_color(self.color.as_component())
+            .src_rect(src)
+            .rect([x, y, TILE_SIZE, TILE_SIZE])
+    }
+
+    fn update(&mut self, args: &UpdateArgs) {
+        match self.state {
+            State::On | State::Off => (),
+            State::Rising(p) => {
+                let p2 = p + args.dt * 5.;
+                if p2 >= 1. { self.state = State::On; }
+                else { self.state = State::Rising(p2); }
+            },
+            State::Falling(p) => {
+                let p2 = p + args.dt * 5.;
+                if p2 >= 1. { self.state = State::Off; }
+                else { self.state = State::Falling(p2); }
+            },
+        }
+    }
+
+    fn on_approach(&self, _entity_id: usize, _direction: &Direction, _game: &GameView) -> GameAction {
+        GameAction::Stop
     }
 }

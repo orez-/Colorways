@@ -4,7 +4,7 @@ use piston_window::{Context, DrawState, Image, Transformed, UpdateArgs};
 use crate::app::{Direction, HeldKeys, Input};
 use crate::circle_wipe::CircleWipe;
 use crate::color::Color;
-use crate::entity::{Entity, Player};
+use crate::entity::{Entity, IEntity, Player};
 use crate::room::Room;
 use crate::view::Transition;
 

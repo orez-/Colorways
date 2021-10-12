@@ -1,31 +1,44 @@
-use piston_window::{Image, UpdateArgs};
+use piston_window::Image;
 use crate::app::Direction;
 use crate::color::Color;
+use crate::entity::IEntity;
 use crate::view::{GameAction, GameView};
 
 const TILE_SIZE: f64 = 16.;
 const WATER: [f64; 4] = [32., 64., TILE_SIZE, TILE_SIZE];
+const SPLASH: [f64; 4] = [48., 176., TILE_SIZE, TILE_SIZE];
+
+enum State {
+    Idle,
+    Sinking(f64),
+}
 
 pub struct Water {
     pub x: i32,
     pub y: i32,
+    state: State
 }
 
 impl Water {
     pub fn new(x: i32, y: i32) -> Self {
-        Self { x, y }
+        Self { x, y, state: State::Idle }
     }
+}
 
-    pub fn sprite(&self) -> Image {
+impl IEntity for Water {
+    fn sprite(&self) -> Image {
         let x = self.x as f64 * TILE_SIZE;
         let y = self.y as f64 * TILE_SIZE;
+        let src = match self.state {
+            State::Idle => WATER,
+            State::Sinking(_) => SPLASH,
+        };
         Image::new()
-            .src_rect(WATER)
+            .src_rect(src)
             .rect([x, y, TILE_SIZE, TILE_SIZE])
     }
 
-    pub fn update(&mut self, _args: &UpdateArgs) {}
-    pub fn on_approach(&self, _entity_id: usize, _direction: &Direction, view: &GameView) -> GameAction {
+    fn on_approach(&self, _entity_id: usize, _direction: &Direction, view: &GameView) -> GameAction {
         if view.tile_in_light(self.x, self.y, &Color::Blue) { return GameAction::Walk; }
         GameAction::Stop
     }

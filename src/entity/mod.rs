@@ -7,7 +7,7 @@ mod player;
 mod water;
 
 pub use block::Block;
-pub use entity::Entity;
+pub use entity::{Entity, IEntity};
 pub use exit::Exit;
 pub use lightbulb::Lightbulb;
 pub use lightswitch::LightSwitch;
