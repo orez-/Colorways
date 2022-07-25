@@ -99,19 +99,10 @@ impl GameView {
     // TODO: if the level's too small probably center it instead
     fn camera(&self) -> (i64, i64) {
         let (x, y) = self.player.center();
-        let mut xs = vec![
-            DISPLAY_WIDTH_HALF,
-            x,
-            self.room.pixel_width() - DISPLAY_WIDTH_HALF,
-        ];
-        let mut ys = vec![
-            DISPLAY_HEIGHT_HALF,
-            y,
-            self.room.pixel_height() - DISPLAY_HEIGHT_HALF,
-        ];
-        xs.sort();
-        ys.sort();
-        (xs[1], ys[1])
+        (
+            x.clamp(DISPLAY_WIDTH_HALF, self.room.pixel_width() - DISPLAY_WIDTH_HALF),
+            y.clamp(DISPLAY_HEIGHT_HALF, self.room.pixel_height() - DISPLAY_HEIGHT_HALF),
+        )
     }
 
     fn render_lights(&self, gl: &mut GlGraphics, draw_state: &DrawState, context: &Context) {
