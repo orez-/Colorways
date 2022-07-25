@@ -39,7 +39,7 @@ impl IEntity for Water {
     }
 
     fn on_approach(&self, _entity_id: usize, _direction: Direction, view: &GameView) -> GameAction {
-        if view.tile_in_light(self.x, self.y, &Color::BLUE) { return GameAction::Walk; }
+        if view.tile_in_light(self.x, self.y, Color::BLUE) { return GameAction::Walk; }
         GameAction::Stop
     }
 }

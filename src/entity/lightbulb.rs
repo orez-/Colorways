@@ -36,8 +36,8 @@ impl Lightbulb {
 
     pub fn draw_light(&self, context: &Context, state: &DrawState, gl: &mut GlGraphics) {
         self.draw_light_fan(
-            self.color.as_light_component(),
-            &state.blend(Blend::Multiply),
+            self.color.as_component(),
+            &state.blend(Blend::Add),
             context,
             gl,
         );
@@ -49,6 +49,13 @@ impl Lightbulb {
 
     pub fn turn_off(&mut self) {
         self.state = State::Falling(0.);
+    }
+
+    pub fn toggle(&mut self) {
+        match self.state {
+            State::On | State::Rising(_) => self.turn_off(),
+            State::Off | State::Falling(_) => self.turn_on(),
+        }
     }
 
     fn light_alpha(&self) -> f32 {

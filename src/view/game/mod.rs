@@ -329,14 +329,14 @@ impl GameView {
     }
 
     pub fn set_light_color(&mut self, color: Color) {
-        if self.light_color == color { return; }
+        self.light_color ^= color;
         for entity in self.entities.iter_mut() {
             if let Entity::Lightbulb(bulb) = entity {
-                if bulb.color == self.light_color { bulb.turn_off(); }
-                else if bulb.color == color { bulb.turn_on(); }
+                if color.contains(bulb.color) {
+                    bulb.toggle();
+                }
             }
         }
-        self.light_color = color;
     }
 
     pub fn tile_is_passable(&self, x: i32, y: i32) -> bool {
@@ -344,9 +344,11 @@ impl GameView {
         tile.map_or(false, |tile| tile.is_passable())
     }
 
-    pub fn tile_in_light(&self, x: i32, y: i32, color: &Color) -> bool {
-        if color == &Color::WHITE { return true; }
-        color.contains(self.light_color) && self.room.tile_in_light(x, y, &self.light_color)
+    pub fn tile_in_light(&self, x: i32, y: i32, tile_color: Color) -> bool {
+        if self.light_color == Color::GRAY { return false; }
+        if tile_color == Color::WHITE { return true; }
+        tile_color.contains(self.light_color)
+            && self.room.tile_in_light(x, y, self.light_color)
     }
 
     pub fn entity_id_at(&self, x: i32, y: i32) -> Option<usize> {

@@ -200,8 +200,8 @@ impl Room {
         self.tiles.get(idx).cloned()
     }
 
-    pub fn tile_in_light(&self, x: i32, y: i32, color: &Color) -> bool {
-        let cidx = match *color {
+    pub fn tile_in_light(&self, x: i32, y: i32, light_color: Color) -> bool {
+        let cidx = match light_color {
             Color::RED => 0,
             Color::GREEN => 1,
             Color::BLUE => 2,

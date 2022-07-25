@@ -26,8 +26,6 @@ bitflags! {
 
 impl Color {
     pub fn as_component(&self) -> ComponentColor {
-        // use Color::{Gray, Red, Green, Blue, Yellow, Cyan, Magenta, White};
-
         match *self {
             Color::GRAY => GRAY,
             Color::RED => RED,
@@ -38,17 +36,6 @@ impl Color {
             Color::MAGENTA => MAGENTA,
             Color::WHITE => WHITE,
             _ => panic!(),
-        }
-    }
-
-    pub fn as_light_component(&self) -> ComponentColor {
-        match *self {
-            Color::GRAY => GRAY,
-            Color::RED => [1., 0.2, 0.2, 1.],
-            Color::GREEN => [0.2, 1., 0.2, 1.],
-            Color::BLUE => [0.2, 0.2, 1., 1.],
-            Color::WHITE => WHITE,
-            _ => unimplemented!(),
         }
     }
 }
