@@ -112,6 +112,7 @@ impl GameView {
         let x = x as f64;
         let y = y as f64;
         Context::new()
+            .zoom(4.)
             .trans(-x + DISPLAY_WIDTH / 2., -y + DISPLAY_HEIGHT / 2.)
     }
 
@@ -140,7 +141,7 @@ impl GameView {
         Image::new().draw(
             &self.light_texture,
             &draw_state.blend(Blend::Multiply),
-            self.absolute_context().transform,
+            Context::new_abs(800., 800.).transform,
             gl,
         );
 
@@ -151,6 +152,7 @@ impl GameView {
     fn render_game(&mut self, draw_state: &DrawState, gl: &mut GlGraphics) {
         // Camera
         let context = self.camera_context();
+        let context2 = self.camera_context2();
 
         // Action
         self.room.render(
@@ -177,7 +179,7 @@ impl GameView {
         );
 
         // Lights
-        self.render_lights(gl, draw_state, &self.camera_context2());
+        self.render_lights(gl, draw_state, &context2);
 
         // Thoughts
         let (px, py) = self.player.pixel_coord();
