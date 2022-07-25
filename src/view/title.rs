@@ -49,7 +49,7 @@ impl TitleView {
         let mut title = Self {
             texture: crate::app::load_texture(),
             cursor: Player::new_cursor(0, 0, 16., 16.),
-            room, entities, light_color: Color::Gray,
+            room, entities, light_color: Color::GRAY,
             state: State::InputCheck,
             fade: None,
             staged_transition: None,
@@ -172,9 +172,9 @@ impl TitleView {
             }
         }
         let color = match self.cursor.y {
-            0 => { Color::Blue },
-            1 => { Color::Green },
-            2 => { Color::Red },
+            0 => { Color::BLUE },
+            1 => { Color::GREEN },
+            2 => { Color::RED },
             _ => unreachable!(),
         };
         self.set_light_color(color);

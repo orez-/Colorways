@@ -1,3 +1,5 @@
+use bitflags::bitflags;
+
 type ComponentColor = [f32; 4];
 
 const GRAY: ComponentColor = [0.3, 0.3, 0.3, 1.];
@@ -9,54 +11,44 @@ const CYAN: ComponentColor = [0., 1., 1., 1.];
 const MAGENTA: ComponentColor = [1., 0., 1., 1.];
 const WHITE: ComponentColor = [1., 1., 1., 1.];
 
-#[derive(Debug, PartialEq, Clone)]
-pub enum Color {
-    Gray,
-    Red,
-    Green,
-    Blue,
-    Yellow,
-    Cyan,
-    Magenta,
-    White,
+bitflags! {
+    pub struct Color: u8 {
+        const GRAY = 0;
+        const RED = 1;
+        const GREEN = 2;
+        const BLUE = 4;
+        const YELLOW = Self::RED.bits | Self::GREEN.bits;
+        const CYAN = Self::GREEN.bits | Self::BLUE.bits;
+        const MAGENTA = Self::RED.bits | Self::BLUE.bits;
+        const WHITE = Self::RED.bits | Self::GREEN.bits | Self::BLUE.bits;
+    }
 }
-use Color::*;
 
 impl Color {
     pub fn as_component(&self) -> ComponentColor {
-        match self {
-            Gray => GRAY,
-            Red => RED,
-            Green => GREEN,
-            Blue => BLUE,
-            Yellow => YELLOW,
-            Cyan => CYAN,
-            Magenta => MAGENTA,
-            White => WHITE,
+        // use Color::{Gray, Red, Green, Blue, Yellow, Cyan, Magenta, White};
+
+        match *self {
+            Color::GRAY => GRAY,
+            Color::RED => RED,
+            Color::GREEN => GREEN,
+            Color::BLUE => BLUE,
+            Color::YELLOW => YELLOW,
+            Color::CYAN => CYAN,
+            Color::MAGENTA => MAGENTA,
+            Color::WHITE => WHITE,
+            _ => panic!(),
         }
     }
 
     pub fn as_light_component(&self) -> ComponentColor {
-        match self {
-            Gray => GRAY,
-            Red => [1., 0.2, 0.2, 1.],
-            Green => [0.2, 1., 0.2, 1.],
-            Blue => [0.2, 0.2, 1., 1.],
-            White => WHITE,
+        match *self {
+            Color::GRAY => GRAY,
+            Color::RED => [1., 0.2, 0.2, 1.],
+            Color::GREEN => [0.2, 1., 0.2, 1.],
+            Color::BLUE => [0.2, 0.2, 1., 1.],
+            Color::WHITE => WHITE,
             _ => unimplemented!(),
-        }
-    }
-
-    pub fn contains(&self, subcolor: &Color) -> bool {
-        match (self, subcolor) {
-            (Red, Red) => true,
-            (Green, Green) => true,
-            (Blue, Blue) => true,
-            (Yellow, Red | Green) => true,
-            (Cyan, Green | Blue) => true,
-            (Magenta, Red | Blue) => true,
-            (White, Red | Green | Blue) => true,
-            _ => false,
         }
     }
 }

@@ -102,10 +102,10 @@ impl Room {
 
     pub fn from_file(bytes: &[u8]) -> Game {
         let starting_color = match bytes[0] {
-            b'R' => Color::Red,
-            b'G' => Color::Green,
-            b'B' => Color::Blue,
-            _ => Color::Gray,
+            b'R' => Color::RED,
+            b'G' => Color::GREEN,
+            b'B' => Color::BLUE,
+            _ => Color::GRAY,
         };
         let first_line = bytes.iter().position(|&c| c == b'\n').unwrap() + 1;
         let bytes = &bytes[first_line..];
@@ -129,38 +129,38 @@ impl Room {
                     if player.is_some() { panic!("{}", ONE_START_MSG); }
                     player = Some(Player::new(x, y));
                 },
-                'k' => { entities.push(Entity::Block(Block::new(x, y, Color::Gray))); },
-                'r' => { entities.push(Entity::Block(Block::new(x, y, Color::Red))); },
-                'g' => { entities.push(Entity::Block(Block::new(x, y, Color::Green))); },
-                'b' => { entities.push(Entity::Block(Block::new(x, y, Color::Blue))); },
-                'y' => { entities.push(Entity::Block(Block::new(x, y, Color::Yellow))); },
-                'c' => { entities.push(Entity::Block(Block::new(x, y, Color::Cyan))); },
-                'm' => { entities.push(Entity::Block(Block::new(x, y, Color::Magenta))); },
-                'w' => { entities.push(Entity::Block(Block::new(x, y, Color::White))); },
+                'k' => { entities.push(Entity::Block(Block::new(x, y, Color::GRAY))); },
+                'r' => { entities.push(Entity::Block(Block::new(x, y, Color::RED))); },
+                'g' => { entities.push(Entity::Block(Block::new(x, y, Color::GREEN))); },
+                'b' => { entities.push(Entity::Block(Block::new(x, y, Color::BLUE))); },
+                'y' => { entities.push(Entity::Block(Block::new(x, y, Color::YELLOW))); },
+                'c' => { entities.push(Entity::Block(Block::new(x, y, Color::CYAN))); },
+                'm' => { entities.push(Entity::Block(Block::new(x, y, Color::MAGENTA))); },
+                'w' => { entities.push(Entity::Block(Block::new(x, y, Color::WHITE))); },
                 'R' => {
                     let Visibility { polygon_pts, tiles } = line_of_sight(x, y, width, height, &walls_polygon);
                     for idx in tiles {
                         sees_color[idx][0] = true;
                     }
-                    entities.push(Entity::Lightbulb(Lightbulb::new(x, y, Color::Red, polygon_pts)));
+                    entities.push(Entity::Lightbulb(Lightbulb::new(x, y, Color::RED, polygon_pts)));
                 },
                 'G' => {
                     let Visibility { polygon_pts, tiles } = line_of_sight(x, y, width, height, &walls_polygon);
                     for idx in tiles {
                         sees_color[idx][1] = true;
                     }
-                    entities.push(Entity::Lightbulb(Lightbulb::new(x, y, Color::Green, polygon_pts)));
+                    entities.push(Entity::Lightbulb(Lightbulb::new(x, y, Color::GREEN, polygon_pts)));
                 },
                 'B' => {
                     let Visibility { polygon_pts, tiles } = line_of_sight(x, y, width, height, &walls_polygon);
                     for idx in tiles {
                         sees_color[idx][2] = true;
                     }
-                    entities.push(Entity::Lightbulb(Lightbulb::new(x, y, Color::Blue, polygon_pts)));
+                    entities.push(Entity::Lightbulb(Lightbulb::new(x, y, Color::BLUE, polygon_pts)));
                 },
-                '1' => { entities.push(Entity::LightSwitch(LightSwitch::new(x, y, Color::Red))); },
-                '2' => { entities.push(Entity::LightSwitch(LightSwitch::new(x, y, Color::Green))); },
-                '3' => { entities.push(Entity::LightSwitch(LightSwitch::new(x, y, Color::Blue))); },
+                '1' => { entities.push(Entity::LightSwitch(LightSwitch::new(x, y, Color::RED))); },
+                '2' => { entities.push(Entity::LightSwitch(LightSwitch::new(x, y, Color::GREEN))); },
+                '3' => { entities.push(Entity::LightSwitch(LightSwitch::new(x, y, Color::BLUE))); },
                 'z' => { entities.push(Entity::Exit(Exit::new(x, y))); },
                 '~' => { entities.push(Entity::Water(Water::new(x, y))); },
                 '\n' => {
@@ -201,10 +201,10 @@ impl Room {
     }
 
     pub fn tile_in_light(&self, x: i32, y: i32, color: &Color) -> bool {
-        let cidx = match color {
-            Color::Red => 0,
-            Color::Green => 1,
-            Color::Blue => 2,
+        let cidx = match *color {
+            Color::RED => 0,
+            Color::GREEN => 1,
+            Color::BLUE => 2,
             _ => { return false; },
         };
         if x < 0 || y < 0 { return false; }
