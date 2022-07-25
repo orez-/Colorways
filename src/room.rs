@@ -201,15 +201,22 @@ impl Room {
     }
 
     pub fn tile_in_light(&self, x: i32, y: i32, light_color: Color) -> bool {
-        let cidx = match light_color {
-            Color::RED => 0,
-            Color::GREEN => 1,
-            Color::BLUE => 2,
-            _ => { return false; },
-        };
         if x < 0 || y < 0 { return false; }
         let idx = self.width * (y as usize) + x as usize;
-        self.sees_color.get(idx).map_or(false, |&arr| arr[cidx])
+        self.sees_color.get(idx).map_or(false, |&arr| {
+            // TODO: gonna need more checks for native-secondary colors
+            // TODO: i dont think this is right, who cares, fix rendering.
+            match light_color {
+                Color::RED => arr[0],
+                Color::GREEN => arr[1],
+                Color::BLUE => arr[2],
+                Color::YELLOW => arr[0] || arr[1],
+                Color::CYAN => arr[1] || arr[2],
+                Color::MAGENTA => arr[0] || arr[2],
+                Color::WHITE => arr[0] || arr[1] || arr[2],
+                _ => false,
+            }
+        })
     }
 
     pub fn pixel_width(&self) -> i64 {

@@ -1,4 +1,4 @@
-use opengl_graphics::GlGraphics;
+use piston_window::Graphics;
 use piston_window::{Context, DrawState, Image, Polygon, UpdateArgs};
 use piston_window::draw_state::Blend;
 use crate::app::{Direction, lerp4};
@@ -34,10 +34,10 @@ impl Lightbulb {
         Self { x, y, color, state: State::Off, light_polygon }
     }
 
-    pub fn draw_light(&self, context: &Context, state: &DrawState, gl: &mut GlGraphics) {
+    pub fn draw_light(&self, context: &Context, state: &DrawState, gl: &mut impl Graphics) {
         self.draw_light_fan(
             self.color.as_component(),
-            &state.blend(Blend::Add),
+            &state.blend(Blend::Lighter),
             context,
             gl,
         );
@@ -67,9 +67,9 @@ impl Lightbulb {
         }
     }
 
-    fn draw_light_fan(&self, color: [f32; 4], state: &DrawState, context: &Context, gl: &mut GlGraphics) {
+    fn draw_light_fan(&self, mut color: [f32; 4], state: &DrawState, context: &Context, gl: &mut impl Graphics) {
         if matches!(self.state, State::Off) { return; }
-        let color = lerp4([1., 1., 1., 1.], color, self.light_alpha());
+        color[3] = self.light_alpha();
         // Need to triangulate the polygon: opengl doesn't draw concave polygons.
         // Fortunately we axiomatically have a point that can see all vertexes: the sprite center.
         // TODO: look into how to accomplish a "fan"

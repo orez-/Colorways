@@ -35,7 +35,7 @@ impl View {
         Self::Title(TitleView::new())
     }
 
-    pub fn render(&self, gl: &mut GlGraphics) {
+    pub fn render(&mut self, gl: &mut GlGraphics) {
         match self {
             View::Menu(v) => v.render(gl),
             View::Game(v) => v.render(gl),

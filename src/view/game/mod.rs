@@ -1,5 +1,6 @@
 mod thought;
 
+use graphics_buffer::RenderBuffer;
 use crate::app::{int_lerp4, Direction, HeldKeys, Input};
 use crate::circle_wipe::CircleWipe;
 use crate::color::Color;
@@ -10,6 +11,7 @@ use crate::view::Transition;
 use opengl_graphics::GlGraphics;
 use opengl_graphics::Texture as GlTexture;
 use piston_window::{Context, DrawState, Image, Transformed, UpdateArgs};
+use piston_window::draw_state::Blend;
 
 const DISPLAY_WIDTH: f64 = 200.;
 const DISPLAY_HEIGHT: f64 = 200.;
@@ -49,6 +51,8 @@ pub enum State {
 
 pub struct GameView {
     texture: GlTexture,
+    light_buffer: RenderBuffer,
+    light_texture: GlTexture,
     player: Player,
     room: Room,
     entities: Vec<Entity>,
@@ -68,6 +72,8 @@ impl GameView {
         let (cx, cy) = player.center();
         let mut game = GameView {
             texture: crate::app::load_texture(),
+            light_buffer: RenderBuffer::new(DISPLAY_WIDTH as u32, DISPLAY_HEIGHT as u32),
+            light_texture: crate::app::load_texture(),  // TODO: eugh
             player,
             room,
             entities,
@@ -96,6 +102,14 @@ impl GameView {
             .trans(-x + DISPLAY_WIDTH / 2., -y + DISPLAY_HEIGHT / 2.)
     }
 
+    fn camera_context2(&self) -> Context {
+        let (x, y) = self.camera();
+        let x = x as f64;
+        let y = y as f64;
+        Context::new()
+            .trans(-x + DISPLAY_WIDTH / 2., -y + DISPLAY_HEIGHT / 2.)
+    }
+
     // TODO: if the level's too small probably center it instead
     fn camera(&self) -> (i64, i64) {
         let (x, y) = self.player.center();
@@ -105,7 +119,9 @@ impl GameView {
         )
     }
 
-    fn render_lights(&self, gl: &mut GlGraphics, draw_state: &DrawState, context: &Context) {
+    fn render_lights(&mut self, gl: &mut GlGraphics, draw_state: &DrawState, context: &Context) {
+        // self.light_buffer.clear([0.3, 0.3, 0.3, 1.0]);
+        piston_window::clear([0.3, 0.3, 0.3, 1.0], gl);
         let lights: Vec<_> = self.entities.iter().filter_map(|e| {
             if let Entity::Lightbulb(bulb) = e { Some(bulb) }
             else { None }
@@ -114,50 +130,64 @@ impl GameView {
         for light in &lights {
             light.draw_light(context, draw_state, gl);
         }
+
+        // let mut texture_settings = opengl_graphics::TextureSettings::new();
+        // texture_settings.set_mag(opengl_graphics::Filter::Nearest);
+
+        // self.light_texture = GlTexture::from_image(&self.light_buffer, &texture_settings);
+        // Image::new().draw(
+        //     &self.light_texture,
+        //     &draw_state.blend(Blend::Multiply),
+        //     self.absolute_context().transform,
+        //     gl,
+        // );
+
+        // let light_texture = self.light_buffer.to_g2d_texture().unwrap();
+        // graphics::image(&light_texture, context.transform, gl)
     }
 
-    fn render_game(&self, draw_state: &DrawState, gl: &mut GlGraphics) {
+    fn render_game(&mut self, draw_state: &DrawState, gl: &mut GlGraphics) {
         // Camera
         let context = self.camera_context();
 
         // Action
-        self.room.render(
-            &self.texture,
-            draw_state,
-            &context,
-            gl,
-        );
+        // self.room.render(
+        //     &self.texture,
+        //     draw_state,
+        //     &context,
+        //     gl,
+        // );
 
-        for entity in &self.entities {
-            entity.sprite().draw(
-                &self.texture,
-                draw_state,
-                context.transform,
-                gl,
-            );
-        }
+        // for entity in &self.entities {
+        //     entity.sprite().draw(
+        //         &self.texture,
+        //         draw_state,
+        //         context.transform,
+        //         gl,
+        //     );
+        // }
 
-        self.player.sprite().draw(
-            &self.texture,
-            draw_state,
-            context.transform,
-            gl,
-        );
+        // self.player.sprite().draw(
+        //     &self.texture,
+        //     draw_state,
+        //     context.transform,
+        //     gl,
+        // );
 
         // Lights
-        self.render_lights(gl, draw_state, &context);
+        self.render_lights(gl, draw_state, &self.camera_context());
 
         // Thoughts
-        let (px, py) = self.player.pixel_coord();
-        self.thought.render(
-            &self.texture,
-            draw_state,
-            &context.trans(px, py),
-            gl,
-        );
+        // let (px, py) = self.player.pixel_coord();
+        // self.thought.render(
+        //     &self.texture,
+        //     draw_state,
+        //     &context.trans(px, py),
+        //     gl,
+        // );
     }
 
-    pub fn render(&self, gl: &mut GlGraphics) {
+    pub fn render(&mut self, gl: &mut GlGraphics) {
         let context = self.camera_context();
         let abs_context = self.absolute_context();
         let cursor_context = abs_context.trans(46., 107.);
@@ -320,7 +350,9 @@ impl GameView {
     }
 
     pub fn set_light_color(&mut self, color: Color) {
+        println!("switchin {:?} on {:?}", color, self.light_color);
         self.light_color ^= color;
+        println!("light is now {:?}", self.light_color);
         for entity in self.entities.iter_mut() {
             if let Entity::Lightbulb(bulb) = entity {
                 if color.contains(bulb.color) {
@@ -336,8 +368,10 @@ impl GameView {
     }
 
     pub fn tile_in_light(&self, x: i32, y: i32, tile_color: Color) -> bool {
+        println!("light: {:?}; tile: {:?}", self.light_color, tile_color);
         if self.light_color == Color::GRAY { return false; }
         if tile_color == Color::WHITE { return true; }
+        println!("contains? {:?}", tile_color.contains(self.light_color));
         tile_color.contains(self.light_color)
             && self.room.tile_in_light(x, y, self.light_color)
     }
