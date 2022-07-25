@@ -68,12 +68,17 @@ pub struct GameView {
 
 impl GameView {
     pub fn new(level_id: usize) -> Self {
+        let mut texture_settings = opengl_graphics::TextureSettings::new();
+        texture_settings.set_mag(opengl_graphics::Filter::Nearest);
+        let light_buffer = RenderBuffer::new(800, 800);
+        let light_texture = GlTexture::from_image(&light_buffer, &texture_settings);
+
         let (room, player, entities, light_color) = Room::new(level_id);
         let (cx, cy) = player.center();
         let mut game = GameView {
             texture: crate::app::load_texture(),
-            light_buffer: RenderBuffer::new(DISPLAY_WIDTH as u32, DISPLAY_HEIGHT as u32),
-            light_texture: crate::app::load_texture(),  // TODO: eugh
+            light_buffer,
+            light_texture,
             player,
             room,
             entities,
@@ -120,27 +125,24 @@ impl GameView {
     }
 
     fn render_lights(&mut self, gl: &mut GlGraphics, draw_state: &DrawState, context: &Context) {
-        // self.light_buffer.clear([0.3, 0.3, 0.3, 1.0]);
-        piston_window::clear([0.3, 0.3, 0.3, 1.0], gl);
+        self.light_buffer.clear([0.3, 0.3, 0.3, 1.0]);
+        // piston_window::clear([0.3, 0.3, 0.3, 1.0], gl);
         let lights: Vec<_> = self.entities.iter().filter_map(|e| {
             if let Entity::Lightbulb(bulb) = e { Some(bulb) }
             else { None }
         }).collect();
 
         for light in &lights {
-            light.draw_light(context, draw_state, gl);
+            light.draw_light(context, draw_state, &mut self.light_buffer);
         }
 
-        // let mut texture_settings = opengl_graphics::TextureSettings::new();
-        // texture_settings.set_mag(opengl_graphics::Filter::Nearest);
-
-        // self.light_texture = GlTexture::from_image(&self.light_buffer, &texture_settings);
-        // Image::new().draw(
-        //     &self.light_texture,
-        //     &draw_state.blend(Blend::Multiply),
-        //     self.absolute_context().transform,
-        //     gl,
-        // );
+        self.light_texture.update(&self.light_buffer);
+        Image::new().draw(
+            &self.light_texture,
+            &draw_state.blend(Blend::Multiply),
+            self.absolute_context().transform,
+            gl,
+        );
 
         // let light_texture = self.light_buffer.to_g2d_texture().unwrap();
         // graphics::image(&light_texture, context.transform, gl)
@@ -151,40 +153,40 @@ impl GameView {
         let context = self.camera_context();
 
         // Action
-        // self.room.render(
-        //     &self.texture,
-        //     draw_state,
-        //     &context,
-        //     gl,
-        // );
+        self.room.render(
+            &self.texture,
+            draw_state,
+            &context,
+            gl,
+        );
 
-        // for entity in &self.entities {
-        //     entity.sprite().draw(
-        //         &self.texture,
-        //         draw_state,
-        //         context.transform,
-        //         gl,
-        //     );
-        // }
+        for entity in &self.entities {
+            entity.sprite().draw(
+                &self.texture,
+                draw_state,
+                context.transform,
+                gl,
+            );
+        }
 
-        // self.player.sprite().draw(
-        //     &self.texture,
-        //     draw_state,
-        //     context.transform,
-        //     gl,
-        // );
+        self.player.sprite().draw(
+            &self.texture,
+            draw_state,
+            context.transform,
+            gl,
+        );
 
         // Lights
-        self.render_lights(gl, draw_state, &self.camera_context());
+        self.render_lights(gl, draw_state, &self.camera_context2());
 
         // Thoughts
-        // let (px, py) = self.player.pixel_coord();
-        // self.thought.render(
-        //     &self.texture,
-        //     draw_state,
-        //     &context.trans(px, py),
-        //     gl,
-        // );
+        let (px, py) = self.player.pixel_coord();
+        self.thought.render(
+            &self.texture,
+            draw_state,
+            &context.trans(px, py),
+            gl,
+        );
     }
 
     pub fn render(&mut self, gl: &mut GlGraphics) {
