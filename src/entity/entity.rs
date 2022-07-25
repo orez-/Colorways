@@ -6,8 +6,8 @@ use crate::entity;
 // The boilerplatenest file. Try to stay out of here as much as possible.
 pub trait IEntity {
     fn sprite(&self) -> Image;
-    fn update(&mut self, args: &UpdateArgs) { }
-    fn on_approach(&self, entity_id: usize, direction: &Direction, view: &GameView) -> GameAction;
+    fn update(&mut self, _args: &UpdateArgs) { }
+    fn on_approach(&self, entity_id: usize, direction: Direction, view: &GameView) -> GameAction;
     fn is_dead(&self) -> bool { false }
 }
 
@@ -63,7 +63,7 @@ impl IEntity for Entity {
         }
     }
 
-    fn on_approach(&self, entity_id: usize, direction: &Direction, view: &GameView) -> GameAction {
+    fn on_approach(&self, entity_id: usize, direction: Direction, view: &GameView) -> GameAction {
         match self {
             Block(e) => e.on_approach(entity_id, direction, view),
             Exit(e) => e.on_approach(entity_id, direction, view),

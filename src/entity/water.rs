@@ -38,7 +38,7 @@ impl IEntity for Water {
             .rect([x, y, TILE_SIZE, TILE_SIZE])
     }
 
-    fn on_approach(&self, _entity_id: usize, _direction: &Direction, view: &GameView) -> GameAction {
+    fn on_approach(&self, _entity_id: usize, _direction: Direction, view: &GameView) -> GameAction {
         if view.tile_in_light(self.x, self.y, &Color::Blue) { return GameAction::Walk; }
         GameAction::Stop
     }

@@ -157,11 +157,11 @@ impl TitleView {
             match input {
                 Input::Navigate(direction @ Direction::North)
                 if self.cursor.y != 0 && self.cursor.can_walk() => {
-                    self.cursor.walk(&direction);
+                    self.cursor.walk(direction);
                 },
                 Input::Navigate(direction @ Direction::South)
                 if self.cursor.y != 2 && self.cursor.can_walk() => {
-                    self.cursor.walk(&direction);
+                    self.cursor.walk(direction);
                 },
                 Input::Accept => match self.cursor.y {
                     0 => { self.fade_out(Transition::Game(0)); },

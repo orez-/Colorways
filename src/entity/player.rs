@@ -117,7 +117,7 @@ impl Player {
         (x as i64 - sx as i64, y as i64 - sy as i64)
     }
 
-    pub fn face(&mut self, direction: &Direction) {
+    pub fn face(&mut self, direction: Direction) {
         match direction {
             West => self.face_left = true,
             East => self.face_left = false,
@@ -125,7 +125,7 @@ impl Player {
         };
     }
 
-    pub fn walk(&mut self, direction: &Direction) -> bool {
+    pub fn walk(&mut self, direction: Direction) -> bool {
         match self.state {
             State::Idle => {
                 match direction {
@@ -134,7 +134,7 @@ impl Player {
                     South => self.y += 1,
                     East => self.x += 1,
                 }
-                self.facing = direction.clone();
+                self.facing = direction;
                 self.state = State::Walk(0.);
                 true
             }
@@ -146,7 +146,7 @@ impl Player {
         matches!(&self.state, State::Idle)
     }
 
-    pub fn undo(&mut self, direction: &Direction) {
+    pub fn undo(&mut self, direction: Direction) {
         let (nx, ny) = direction.from(self.x, self.y);
         self.x = nx;
         self.y = ny;

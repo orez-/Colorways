@@ -26,5 +26,5 @@ impl IEntity for Exit {
             .rect([x, y, TILE_SIZE, TILE_SIZE])
     }
 
-    fn on_approach(&self, _entity_id: usize, _direction: &Direction, _game: &GameView) -> GameAction { GameAction::Win }
+    fn on_approach(&self, _entity_id: usize, _direction: Direction, _game: &GameView) -> GameAction { GameAction::Win }
 }

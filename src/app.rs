@@ -71,10 +71,10 @@ impl App {
         match self.view.update(args, &mut self.held_keys) {
             Some(Transition::Game(level_id)) => {
                 let top = crate::room::NUM_LEVELS - 1;
-                if level_id > top { self.to_menu(top); }
+                if level_id > top { self.nav_to_menu(top); }
                 else { self.view = View::game(level_id); }
             },
-            Some(Transition::Menu(level_id)) => { self.to_menu(level_id); }
+            Some(Transition::Menu(level_id)) => { self.nav_to_menu(level_id); }
             Some(Transition::Win(level_id)) => {
                 self.completed_levels.insert(level_id);
             }
@@ -82,7 +82,7 @@ impl App {
         }
     }
 
-    fn to_menu(&mut self, level_id: usize) {
+    fn nav_to_menu(&mut self, level_id: usize) {
         let completed_levels = self.completed_levels.iter().copied().collect();
         self.view = View::menu(level_id, completed_levels);
     }
@@ -96,7 +96,7 @@ impl App {
     }
 }
 
-#[derive(PartialEq, Clone)]
+#[derive(PartialEq, Clone, Copy)]
 pub enum Direction {
     North,
     East,

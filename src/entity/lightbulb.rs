@@ -115,7 +115,7 @@ impl IEntity for Lightbulb {
         }
     }
 
-    fn on_approach(&self, _entity_id: usize, _direction: &Direction, _game: &GameView) -> GameAction {
+    fn on_approach(&self, _entity_id: usize, _direction: Direction, _game: &GameView) -> GameAction {
         GameAction::Stop
     }
 }

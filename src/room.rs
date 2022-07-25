@@ -23,7 +23,7 @@ const TILE_SIZE: f64 = 16.;
 const WALL: [f64; 4] = [32., 0., TILE_SIZE, TILE_SIZE];
 const FLOOR: [f64; 4] = [32., 16., TILE_SIZE, TILE_SIZE];
 
-#[derive(Clone)]
+#[derive(Clone, Copy)]
 pub enum Tile {
     Floor,
     Wall,

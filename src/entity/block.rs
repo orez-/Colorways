@@ -50,7 +50,7 @@ impl Block {
         (0., 0.)
     }
 
-    pub fn push(&mut self, direction: &Direction) {
+    pub fn push(&mut self, direction: Direction) {
         match direction {
             Direction::North => self.y -= 1,
             Direction::West => self.x -= 1,
@@ -58,7 +58,7 @@ impl Block {
             Direction::East => self.x += 1,
         }
         self.state = State::Slide(0.);
-        self.facing = direction.clone();
+        self.facing = direction;
     }
 }
 
@@ -91,7 +91,7 @@ impl IEntity for Block {
         }
     }
 
-    fn on_approach(&self, entity_id: usize, direction: &Direction, view: &GameView) -> GameAction {
+    fn on_approach(&self, entity_id: usize, direction: Direction, view: &GameView) -> GameAction {
         if view.tile_in_light(self.x, self.y, &self.color) { return GameAction::Walk; }
         let (nx, ny) = direction.from(self.x, self.y);
         if !view.tile_is_passable(nx, ny) { return GameAction::Stop; }

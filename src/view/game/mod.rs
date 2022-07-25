@@ -132,7 +132,7 @@ impl GameView {
         // Action
         self.room.render(
             &self.texture,
-            &draw_state,
+            draw_state,
             &context,
             gl,
         );
@@ -140,7 +140,7 @@ impl GameView {
         for entity in &self.entities {
             entity.sprite().draw(
                 &self.texture,
-                &draw_state,
+                draw_state,
                 context.transform,
                 gl,
             );
@@ -148,19 +148,19 @@ impl GameView {
 
         self.player.sprite().draw(
             &self.texture,
-            &draw_state,
+            draw_state,
             context.transform,
             gl,
         );
 
         // Lights
-        self.render_lights(gl, &draw_state, &context);
+        self.render_lights(gl, draw_state, &context);
 
         // Thoughts
         let (px, py) = self.player.pixel_coord();
         self.thought.render(
             &self.texture,
-            &draw_state,
+            draw_state,
             &context.trans(px, py),
             gl,
         );
@@ -219,7 +219,7 @@ impl GameView {
             State::Play => self.update_play(held_keys),
             State::Win(progress) => {
                 if *progress < 1. {
-                    *progress = *progress + args.dt * 5.;
+                    *progress += args.dt * 5.;
                     if *progress >= 1. {
                         *progress = 1.;
                         self.cursor = Some(Player::new(0, 0));
@@ -235,14 +235,14 @@ impl GameView {
             match input {
                 Input::Navigate(direction) => {
                     self.thought.dismiss();
-                    self.player.face(&direction);
+                    self.player.face(direction);
                     let (nx, ny) = direction.from(self.player.x, self.player.y);
                     if self.player.can_walk() && self.tile_is_passable(nx, ny) {
                         let action = if let Some(entity_id) = self.entity_id_at(nx, ny) {
-                            self.entities[entity_id].on_approach(entity_id, &direction, self)
+                            self.entities[entity_id].on_approach(entity_id, direction, self)
                         }
                         else { GameAction::Walk };
-                        return self.handle_action(&direction, action);
+                        return self.handle_action(direction, action);
                     }
                 }
                 Input::Accept => { self.fade_out(Transition::Menu(self.level_id)); }
@@ -253,9 +253,9 @@ impl GameView {
         None
     }
 
-    fn handle_action(&mut self, direction: &Direction, action: GameAction) -> Option<Transition> {
+    fn handle_action(&mut self, direction: Direction, action: GameAction) -> Option<Transition> {
         if matches!(action, GameAction::Stop) { return None; }
-        self.player.walk(&direction);
+        self.player.walk(direction);
         match action {
             GameAction::Walk => {
                 self.history.push(HistoryEvent {
@@ -310,10 +310,10 @@ impl GameView {
                 }
                 match input {
                     Input::Navigate(direction @ Direction::North) if cursor.y == 1 => {
-                        cursor.walk(&direction);
+                        cursor.walk(direction);
                     }
                     Input::Navigate(direction @ Direction::South) if cursor.y == 0 => {
-                        cursor.walk(&direction);
+                        cursor.walk(direction);
                     }
                     Input::Accept => match cursor.y {
                         0 => { transition = Some(Transition::Game(self.level_id + 1)); }
@@ -395,6 +395,6 @@ impl GameView {
                 self.set_light_color(color);
             },
         }
-        self.player.undo(&event.direction);
+        self.player.undo(event.direction);
     }
 }

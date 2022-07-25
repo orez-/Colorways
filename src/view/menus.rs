@@ -123,12 +123,12 @@ impl MenuView {
         for input in held_keys.inputs() {
             match input {
                 Input::Navigate(direction) => {
-                    self.cursor.face(&direction);
+                    self.cursor.face(direction);
                     let (nx, ny) = direction.from(self.cursor.x, self.cursor.y);
                     if self.cursor.can_walk()
                             && nx >= 0 && nx < LEVELS_HORIZONTAL as i32
                             && ny >= 0 && ny < LEVELS_VERTICAL as i32  {
-                        self.cursor.walk(&direction);
+                        self.cursor.walk(direction);
                     }
                 }
                 Input::Accept => {

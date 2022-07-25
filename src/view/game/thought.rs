@@ -72,7 +72,7 @@ impl Thought {
         }
 
         // med
-        match self.state {
+        let maybe_img = match self.state {
             Opening(p) if p < 1./6. => None,
             Opening(p) if p < 2./6. =>
                 Some(Image::new()
@@ -83,15 +83,18 @@ impl Thought {
                     .src_rect(MED_THOUGHT)
                     .rect([-6., -24., 16., 16.])),
             Closing(_) => None,
-        }.map(|img| img.draw(
-            texture,
-            draw_state,
-            context.transform,
-            gl,
-        ));
+        };
+        if let Some(img) = maybe_img {
+            img.draw(
+                texture,
+                draw_state,
+                context.transform,
+                gl,
+            );
+        }
 
         // big
-        match self.state {
+        let maybe_img = match self.state {
             Opening(p) if p < 3./6. => None,
             Opening(p) if p < 4./6. =>
                 Some(Image::new()
@@ -106,11 +109,14 @@ impl Thought {
                     .src_rect(MAIN_THOUGHT)
                     .rect([MAIN_X - 8., MAIN_Y - 8., 32., 32.])),
             Closing(_) => None,
-        }.map(|img| img.draw(
-            texture,
-            draw_state,
-            context.transform,
-            gl,
-        ));
+        };
+        if let Some(img) = maybe_img {
+            img.draw(
+                texture,
+                draw_state,
+                context.transform,
+                gl,
+            );
+        }
     }
 }
