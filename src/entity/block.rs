@@ -92,7 +92,7 @@ impl IEntity for Block {
     }
 
     fn on_approach(&self, entity_id: usize, direction: Direction, view: &GameView) -> GameAction {
-        if view.tile_in_light(self.x, self.y, &self.color) { return GameAction::Walk; }
+        if view.tile_in_light(self.x, self.y, self.color) { return GameAction::Walk; }
         let (nx, ny) = direction.from(self.x, self.y);
         if !view.tile_is_passable(nx, ny) { return GameAction::Stop; }
         match view.entity_at(nx, ny) {
