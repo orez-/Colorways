@@ -357,16 +357,14 @@ impl GameView {
     }
 
     pub fn set_light_color(&mut self, color: Color) {
-        println!("switchin {:?} on {:?}", color, self.light_color);
-        self.light_color ^= color;
-        println!("light is now {:?}", self.light_color);
+        if self.light_color == color { return; }
         for entity in self.entities.iter_mut() {
             if let Entity::Lightbulb(bulb) = entity {
-                if color.contains(bulb.color) {
-                    bulb.toggle();
-                }
+                if bulb.color == self.light_color { bulb.turn_off(); }
+                else if bulb.color == color { bulb.turn_on(); }
             }
         }
+        self.light_color = color;
     }
 
     pub fn tile_is_passable(&self, x: i32, y: i32) -> bool {
