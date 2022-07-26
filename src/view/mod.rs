@@ -35,18 +35,11 @@ impl View {
         Self::Title(TitleView::new())
     }
 
-    pub fn pre_render(&mut self, args: &RenderArgs, gl: &mut GlGraphics) {
+    pub fn render(&mut self, args: &RenderArgs, gl: &mut GlGraphics) {
         match self {
-            View::Game(v) => v.pre_render(args, gl),
-            _ => (),
-        }
-    }
-
-    pub fn render(&mut self, gl: &mut GlGraphics) {
-        match self {
-            View::Menu(v) => v.render(gl),
-            View::Game(v) => v.render(gl),
-            View::Title(v) => v.render(gl),
+            View::Menu(v) => v.render(args, gl),
+            View::Game(v) => v.render(args, gl),
+            View::Title(v) => v.render(args, gl),
         }
     }
 

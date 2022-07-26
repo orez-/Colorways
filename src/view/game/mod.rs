@@ -141,11 +141,16 @@ impl GameView {
         });
     }
 
-    pub fn pre_render(&mut self, args: &RenderArgs, gl: &mut GlGraphics) {
+    pub fn render(&mut self, args: &RenderArgs, gl: &mut GlGraphics) {
         let context2 = self.camera_context2();
 
         let draw_state = DrawState::default();
         self.render_lights(args, gl, &draw_state, &context2);
+
+        gl.draw(args.viewport(), |_, gl| {
+            piston_window::clear([0.0, 0.0, 0.0, 1.0], gl);
+            self.render_scene(gl);
+        });
     }
 
     fn render_game(&mut self, draw_state: &DrawState, gl: &mut GlGraphics) {
@@ -194,7 +199,7 @@ impl GameView {
         );
     }
 
-    pub fn render(&mut self, gl: &mut GlGraphics) {
+    pub fn render_scene(&mut self, gl: &mut GlGraphics) {
         let context = self.camera_context();
         let abs_context = self.absolute_context();
         let cursor_context = abs_context.trans(46., 107.);

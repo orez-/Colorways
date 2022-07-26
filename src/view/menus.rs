@@ -4,7 +4,7 @@ use crate::entity::Player;
 use crate::view::Transition;
 use opengl_graphics::GlGraphics;
 use opengl_graphics::Texture as GlTexture;
-use piston_window::{Context, DrawState, Image, Rectangle, Transformed, UpdateArgs};
+use piston_window::{Context, DrawState, Image, Rectangle, RenderArgs, Transformed, UpdateArgs};
 use piston_window::rectangle::rectangle_by_corners;
 
 const DISPLAY_WIDTH: f64 = 200.;
@@ -44,7 +44,14 @@ impl MenuView {
         }
     }
 
-    pub fn render(&self, gl: &mut GlGraphics) {
+    pub fn render(&self, args: &RenderArgs, gl: &mut GlGraphics) {
+        gl.draw(args.viewport(), |_, gl| {
+            piston_window::clear([0.0, 0.0, 0.0, 1.0], gl);
+            self.render_scene(gl);
+        });
+    }
+
+    pub fn render_scene(&self, gl: &mut GlGraphics) {
         let context = Context::new_abs(DISPLAY_WIDTH, DISPLAY_HEIGHT);
         let cursor_context = context.trans(35., 15.);
         let color = Rectangle::new([0.7, 0.7, 0.7, 1.]);

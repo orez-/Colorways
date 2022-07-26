@@ -1,7 +1,7 @@
 use std::collections::HashSet;
 use crate::view::{Transition, View};
 use piston_window::{Button, Key};
-use piston_window::{clear, RenderArgs, UpdateArgs};
+use piston_window::{RenderArgs, UpdateArgs};
 use opengl_graphics::Filter;
 use opengl_graphics::GlGraphics;
 use opengl_graphics::Texture as GlTexture;
@@ -60,12 +60,7 @@ impl App {
     }
 
     pub fn render(&mut self, args: &RenderArgs, gl: &mut GlGraphics) {
-        let v = args.viewport();
-        self.view.pre_render(args, gl);
-        gl.draw(v, |_, gl| {
-            clear([0.0, 0.0, 0.0, 1.0], gl);
-            self.view.render(gl);
-        });
+        self.view.render(args, gl);
     }
 
     pub fn update(&mut self, args: &UpdateArgs) {

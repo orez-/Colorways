@@ -1,6 +1,6 @@
 use opengl_graphics::GlGraphics;
 use opengl_graphics::Texture as GlTexture;
-use piston_window::{Context, DrawState, Image, Transformed, UpdateArgs};
+use piston_window::{Context, DrawState, Image, RenderArgs, Transformed, UpdateArgs};
 use crate::app::{Direction, HeldKeys, Input};
 use crate::circle_wipe::CircleWipe;
 use crate::color::Color;
@@ -69,7 +69,14 @@ impl TitleView {
         }
     }
 
-    pub fn render(&self, gl: &mut GlGraphics) {
+    pub fn render(&self, args: &RenderArgs, gl: &mut GlGraphics) {
+        gl.draw(args.viewport(), |_, gl| {
+            piston_window::clear([0.0, 0.0, 0.0, 1.0], gl);
+            self.render_scene(gl);
+        });
+    }
+
+    pub fn render_scene(&self, gl: &mut GlGraphics) {
         let context = Context::new_abs(DISPLAY_WIDTH, DISPLAY_HEIGHT);
         let room_context = context.trans(ROOM_OFFSET_X, ROOM_OFFSET_Y);
         let cursor_context = room_context.trans(80., 112.);
