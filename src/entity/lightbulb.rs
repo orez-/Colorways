@@ -1,7 +1,7 @@
 use piston_window::Graphics;
 use piston_window::{Context, DrawState, Image, Polygon, UpdateArgs};
 use piston_window::draw_state::Blend;
-use crate::app::{Direction, lerp4};
+use crate::app::Direction;
 use crate::color::Color;
 use crate::entity::IEntity;
 use crate::view::{GameAction, GameView};

@@ -1,6 +1,5 @@
 mod thought;
 
-use graphics_buffer::RenderBuffer;
 use crate::app::{int_lerp4, Direction, HeldKeys, Input};
 use crate::circle_wipe::CircleWipe;
 use crate::color::Color;
@@ -8,9 +7,10 @@ use crate::entity::{Block, Entity, IEntity, Player, Water};
 use crate::room::Room;
 use crate::view::game::thought::Thought;
 use crate::view::Transition;
+use opengl_framebuffer::FrameBuffer;
 use opengl_graphics::GlGraphics;
 use opengl_graphics::Texture as GlTexture;
-use piston_window::{Context, DrawState, Image, Transformed, UpdateArgs};
+use piston_window::{Context, DrawState, Image, RenderArgs, Transformed, UpdateArgs};
 use piston_window::draw_state::Blend;
 
 const DISPLAY_WIDTH: f64 = 200.;
@@ -21,6 +21,8 @@ const DISPLAY_HEIGHT_HALF: i64 = DISPLAY_HEIGHT as i64 / 2;
 const LEVEL_COMPLETE_SRC: [f64; 4] = [128., 0., 128., 112.];
 const LEVEL_COMPLETE_START_DEST: [f64; 4] = [36., -112., 128., 112.];
 const LEVEL_COMPLETE_END_DEST: [f64; 4] = [36., 40., 128., 112.];
+
+const DARK: [f32; 4] = [0.3, 0.3, 0.3, 1.0];
 
 #[derive(Debug)]
 pub enum GameAction {
@@ -51,8 +53,7 @@ pub enum State {
 
 pub struct GameView {
     texture: GlTexture,
-    light_buffer: RenderBuffer,
-    light_texture: GlTexture,
+    light_buffer: FrameBuffer,
     player: Player,
     room: Room,
     entities: Vec<Entity>,
@@ -70,15 +71,16 @@ impl GameView {
     pub fn new(level_id: usize) -> Self {
         let mut texture_settings = opengl_graphics::TextureSettings::new();
         texture_settings.set_mag(opengl_graphics::Filter::Nearest);
-        let light_buffer = RenderBuffer::new(800, 800);
-        let light_texture = GlTexture::from_image(&light_buffer, &texture_settings);
+
+        let canvas = image::ImageBuffer::new(800, 800);
+        let texture = GlTexture::from_image(&canvas, &texture_settings);
+        let light_buffer = FrameBuffer::new(texture);
 
         let (room, player, entities, light_color) = Room::new(level_id);
         let (cx, cy) = player.center();
         let mut game = GameView {
             texture: crate::app::load_texture(),
             light_buffer,
-            light_texture,
             player,
             room,
             entities,
@@ -111,7 +113,7 @@ impl GameView {
         let (x, y) = self.camera();
         let x = x as f64;
         let y = y as f64;
-        Context::new()
+        Context::new_abs(800., 800.)
             .zoom(4.)
             .trans(-x + DISPLAY_WIDTH / 2., -y + DISPLAY_HEIGHT / 2.)
     }
@@ -125,34 +127,30 @@ impl GameView {
         )
     }
 
-    fn render_lights(&mut self, gl: &mut GlGraphics, draw_state: &DrawState, context: &Context) {
-        self.light_buffer.clear([0.3, 0.3, 0.3, 1.0]);
-        // piston_window::clear([0.3, 0.3, 0.3, 1.0], gl);
-        let lights: Vec<_> = self.entities.iter().filter_map(|e| {
-            if let Entity::Lightbulb(bulb) = e { Some(bulb) }
-            else { None }
-        }).collect();
+    fn render_lights(&mut self, args: &RenderArgs, gl: &mut GlGraphics, draw_state: &DrawState, context: &Context) {
+        self.light_buffer.draw(args.viewport(), gl, |_, gl| {
+            piston_window::clear(DARK, gl);
+            let lights: Vec<_> = self.entities.iter().filter_map(|e| {
+                if let Entity::Lightbulb(bulb) = e { Some(bulb) }
+                else { None }
+            }).collect();
 
-        for light in &lights {
-            light.draw_light(context, draw_state, &mut self.light_buffer);
-        }
+            for light in lights {
+                light.draw_light(&context, draw_state, gl);
+            }
+        });
+    }
 
-        self.light_texture.update(&self.light_buffer);
-        Image::new().draw(
-            &self.light_texture,
-            &draw_state.blend(Blend::Multiply),
-            Context::new_abs(800., 800.).transform,
-            gl,
-        );
+    pub fn pre_render(&mut self, args: &RenderArgs, gl: &mut GlGraphics) {
+        let context2 = self.camera_context2();
 
-        // let light_texture = self.light_buffer.to_g2d_texture().unwrap();
-        // graphics::image(&light_texture, context.transform, gl)
+        let draw_state = DrawState::default();
+        self.render_lights(args, gl, &draw_state, &context2);
     }
 
     fn render_game(&mut self, draw_state: &DrawState, gl: &mut GlGraphics) {
         // Camera
         let context = self.camera_context();
-        let context2 = self.camera_context2();
 
         // Action
         self.room.render(
@@ -179,7 +177,12 @@ impl GameView {
         );
 
         // Lights
-        self.render_lights(gl, draw_state, &context2);
+        Image::new().draw(
+            self.light_buffer.texture(),
+            &draw_state.blend(Blend::Multiply),
+            Context::new_abs(800., 800.).flip_v().trans(0., -800.).transform,
+            gl,
+        );
 
         // Thoughts
         let (px, py) = self.player.pixel_coord();

@@ -1,5 +1,5 @@
 use opengl_graphics::GlGraphics;
-use piston_window::UpdateArgs;
+use piston_window::{RenderArgs, UpdateArgs};
 use crate::app::HeldKeys;
 
 pub mod game;
@@ -33,6 +33,13 @@ impl View {
 
     pub fn title() -> Self {
         Self::Title(TitleView::new())
+    }
+
+    pub fn pre_render(&mut self, args: &RenderArgs, gl: &mut GlGraphics) {
+        match self {
+            View::Game(v) => v.pre_render(args, gl),
+            _ => (),
+        }
     }
 
     pub fn render(&mut self, gl: &mut GlGraphics) {

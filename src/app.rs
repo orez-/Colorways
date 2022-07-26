@@ -61,6 +61,7 @@ impl App {
 
     pub fn render(&mut self, args: &RenderArgs, gl: &mut GlGraphics) {
         let v = args.viewport();
+        self.view.pre_render(args, gl);
         gl.draw(v, |_, gl| {
             clear([0.0, 0.0, 0.0, 1.0], gl);
             self.view.render(gl);
