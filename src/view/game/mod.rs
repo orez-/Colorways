@@ -3,7 +3,8 @@ mod thought;
 use crate::app::{int_lerp4, Direction, HeldKeys, Input};
 use crate::circle_wipe::CircleWipe;
 use crate::entity::Player;
-use crate::scene::{Scene, HistoryEvent, HistoryEventType};
+use crate::room::Room;
+use crate::scene::{Scene, CameraMode, HistoryEvent, HistoryEventType};
 use crate::view::game::thought::Thought;
 use crate::view::Transition;
 use opengl_graphics::GlGraphics;
@@ -36,7 +37,9 @@ pub struct GameView {
 
 impl GameView {
     pub fn new(level_id: usize) -> Self {
-        let scene = Scene::new(level_id);
+        let game = Room::new(level_id);
+        let camera_mode = CameraMode::Player;
+        let scene = Scene::new(game, camera_mode);
         let (cx, cy) = scene.player.center();
         GameView {
             texture: crate::app::load_texture(),
@@ -52,7 +55,7 @@ impl GameView {
     }
 
     pub fn render(&mut self, args: &RenderArgs, gl: &mut GlGraphics) {
-        self.scene.render_lights(args, gl);
+        self.scene.prerender_lights(args, gl);
 
         gl.draw(args.viewport(), |_, gl| {
             piston_window::clear([0.0, 0.0, 0.0, 1.0], gl);
@@ -60,7 +63,7 @@ impl GameView {
         });
     }
 
-    fn render_game(&mut self, draw_state: &DrawState, gl: &mut GlGraphics) {
+    fn render_game(&self, draw_state: &DrawState, gl: &mut GlGraphics) {
         self.scene.render_game(draw_state, gl);
 
         let context = self.scene.camera_context();

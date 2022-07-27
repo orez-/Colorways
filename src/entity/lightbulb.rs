@@ -35,8 +35,10 @@ impl Lightbulb {
     }
 
     pub fn draw_light(&self, context: &Context, state: &DrawState, gl: &mut impl Graphics) {
+        let mut color = self.color.as_component();
+        color[3] = self.light_alpha();
         self.draw_light_fan(
-            self.color.as_component(),
+            color,
             &state.blend(Blend::Lighter),
             context,
             gl,
@@ -67,9 +69,8 @@ impl Lightbulb {
         }
     }
 
-    fn draw_light_fan(&self, mut color: [f32; 4], state: &DrawState, context: &Context, gl: &mut impl Graphics) {
+    pub fn draw_light_fan(&self, color: [f32; 4], state: &DrawState, context: &Context, gl: &mut impl Graphics) {
         if matches!(self.state, State::Off) { return; }
-        color[3] = self.light_alpha();
         // Need to triangulate the polygon: opengl doesn't draw concave polygons.
         // Fortunately we axiomatically have a point that can see all vertexes: the sprite center.
         // TODO: look into how to accomplish a "fan"

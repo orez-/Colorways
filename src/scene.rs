@@ -1,22 +1,30 @@
 use crate::app::Direction;
 use crate::color::Color;
 use crate::entity::{Block, Entity, IEntity, Player, Water};
-use crate::room::Room;
+use crate::room::{Room, Game};
 use opengl_framebuffer::FrameBuffer;
 use opengl_graphics::GlGraphics;
 use opengl_graphics::Texture as GlTexture;
 use piston_window::{Context, DrawState, Image, RenderArgs, Transformed, UpdateArgs};
 use piston_window::draw_state::Blend;
 
-const DARK: [f32; 4] = [0.3, 0.3, 0.3, 1.0];
+const AMBIENT: [f32; 4] = [0.6, 0.6, 0.6, 1.0];
+const LIGHT_BASE: [f32; 4] = [0.3, 0.3, 0.3, 1.0];
 
 const DISPLAY_WIDTH: f64 = 200.;
 const DISPLAY_HEIGHT: f64 = 200.;
 const DISPLAY_WIDTH_HALF: i64 = DISPLAY_WIDTH as i64 / 2;
 const DISPLAY_HEIGHT_HALF: i64 = DISPLAY_HEIGHT as i64 / 2;
 
-enum CameraMode {
+pub enum CameraMode {
     Player,
+    Fixed(i64, i64),
+}
+
+impl CameraMode {
+    pub fn offset(x: i64, y: i64) -> Self {
+        Self::Fixed(x + DISPLAY_WIDTH_HALF, y + DISPLAY_HEIGHT_HALF)
+    }
 }
 
 #[derive(Debug)]
@@ -53,15 +61,14 @@ pub struct Scene {
 }
 
 impl Scene {
-    pub fn new(level_id: usize) -> Self {
+    pub fn new(game: Game, camera_mode: CameraMode) -> Self {
+        let (room, player, entities, light_color) = game;
         let mut texture_settings = opengl_graphics::TextureSettings::new();
         texture_settings.set_mag(opengl_graphics::Filter::Nearest);
 
         let canvas = image::ImageBuffer::new(800, 800);
         let texture = GlTexture::from_image(&canvas, &texture_settings);
         let light_buffer = FrameBuffer::new(texture);
-
-        let (room, player, entities, light_color) = Room::new(level_id);
 
         let mut this = Self {
             texture: crate::app::load_texture(),
@@ -70,7 +77,7 @@ impl Scene {
             room,
             entities,
             light_color: Color::GRAY,
-            camera_mode: CameraMode::Player,
+            camera_mode,
         };
         this.set_light_color(light_color);
         this
@@ -89,15 +96,14 @@ impl Scene {
 
     // TODO: if the level's too small probably center it instead
     fn camera(&self) -> (i64, i64) {
-        match self.camera_mode {
-            CameraMode::Player => {
-                let (x, y) = self.player.center();
-                (
-                    x.clamp(DISPLAY_WIDTH_HALF, self.room.pixel_width() - DISPLAY_WIDTH_HALF),
-                    y.clamp(DISPLAY_HEIGHT_HALF, self.room.pixel_height() - DISPLAY_HEIGHT_HALF),
-                )
-            }
-        }
+        let (x, y) = match self.camera_mode {
+            CameraMode::Player => self.player.center(),
+            CameraMode::Fixed(x, y) => (x, y),
+        };
+        (
+            x.clamp(DISPLAY_WIDTH_HALF, self.room.pixel_width() - DISPLAY_WIDTH_HALF),
+            y.clamp(DISPLAY_HEIGHT_HALF, self.room.pixel_height() - DISPLAY_HEIGHT_HALF),
+        )
     }
 
     fn absolute_context(&self) -> Context {
@@ -121,16 +127,23 @@ impl Scene {
             .trans(-x + DISPLAY_WIDTH / 2., -y + DISPLAY_HEIGHT / 2.)
     }
 
-    pub fn render_lights(&mut self, args: &RenderArgs, gl: &mut GlGraphics) {
+    pub fn prerender_lights(&mut self, args: &RenderArgs, gl: &mut GlGraphics) {
         let context = self.camera_context2();
         let draw_state = DrawState::default();
 
         self.light_buffer.draw(args.viewport(), gl, |_, gl| {
-            piston_window::clear(DARK, gl);
+            piston_window::clear(AMBIENT, gl);
             let lights: Vec<_> = self.entities.iter().filter_map(|e| {
                 if let Entity::Lightbulb(bulb) = e { Some(bulb) }
                 else { None }
             }).collect();
+
+            // Pre-paint a darker color over the areas we'll be painting lights.
+            // This allows us to keep the lights primarily the color they're displaying,
+            // while letting us independently set an ambient light for the scene.
+            for light in &lights {
+                light.draw_light_fan(LIGHT_BASE, &draw_state, &context, gl);
+            }
 
             for light in lights {
                 light.draw_light(&context, &draw_state, gl);
@@ -138,11 +151,14 @@ impl Scene {
         });
     }
 
-    pub fn render_game(&mut self, draw_state: &DrawState, gl: &mut GlGraphics) {
-        // Camera
+    pub fn render_game(&self, draw_state: &DrawState, gl: &mut GlGraphics) {
+        self.render_stuff(draw_state, gl);
+        self.render_lights(draw_state, gl);
+    }
+
+    pub fn render_stuff(&self, draw_state: &DrawState, gl: &mut GlGraphics) {
         let context = self.camera_context();
 
-        // Action
         self.room.render(
             &self.texture,
             draw_state,
@@ -165,8 +181,9 @@ impl Scene {
             context.transform,
             gl,
         );
+    }
 
-        // Lights
+    pub fn render_lights(&self, draw_state: &DrawState, gl: &mut GlGraphics) {
         Image::new().draw(
             self.light_buffer.texture(),
             &draw_state.blend(Blend::Multiply),

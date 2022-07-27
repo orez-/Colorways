@@ -82,7 +82,7 @@ fn to_walls_polygon(tiles: &[Tile], width: usize) -> geo::MultiPolygon<f64> {
     geo::MultiPolygon(polygons)
 }
 
-type Game = (Room, Player, Vec<Entity>, Color);
+pub type Game = (Room, Player, Vec<Entity>, Color);
 
 pub struct Room {
     width: usize,
