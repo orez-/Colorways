@@ -6,7 +6,7 @@ pub mod game;
 pub mod menus;
 pub mod title;
 
-pub use game::{GameView, GameAction};
+pub use game::GameView;
 pub use menus::MenuView;
 pub use title::TitleView;
 

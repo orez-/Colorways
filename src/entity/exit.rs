@@ -1,7 +1,7 @@
 use piston_window::Image;
 use crate::app::Direction;
 use crate::entity::IEntity;
-use crate::view::{GameAction, GameView};
+use crate::scene::{Scene, GameAction};
 
 const TILE_SIZE: f64 = 16.;
 const EXIT: [f64; 4] = [16., 0., TILE_SIZE, TILE_SIZE];
@@ -26,5 +26,5 @@ impl IEntity for Exit {
             .rect([x, y, TILE_SIZE, TILE_SIZE])
     }
 
-    fn on_approach(&self, _entity_id: usize, _direction: Direction, _game: &GameView) -> GameAction { GameAction::Win }
+    fn on_approach(&self, _entity_id: usize, _direction: Direction, _game: &Scene) -> GameAction { GameAction::Win }
 }

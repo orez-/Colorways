@@ -2,49 +2,20 @@ mod thought;
 
 use crate::app::{int_lerp4, Direction, HeldKeys, Input};
 use crate::circle_wipe::CircleWipe;
-use crate::color::Color;
-use crate::entity::{Block, Entity, IEntity, Player, Water};
-use crate::room::Room;
+use crate::entity::Player;
+use crate::scene::{Scene, HistoryEvent, HistoryEventType};
 use crate::view::game::thought::Thought;
 use crate::view::Transition;
-use opengl_framebuffer::FrameBuffer;
 use opengl_graphics::GlGraphics;
 use opengl_graphics::Texture as GlTexture;
 use piston_window::{Context, DrawState, Image, RenderArgs, Transformed, UpdateArgs};
-use piston_window::draw_state::Blend;
 
 const DISPLAY_WIDTH: f64 = 200.;
 const DISPLAY_HEIGHT: f64 = 200.;
-const DISPLAY_WIDTH_HALF: i64 = DISPLAY_WIDTH as i64 / 2;
-const DISPLAY_HEIGHT_HALF: i64 = DISPLAY_HEIGHT as i64 / 2;
 
 const LEVEL_COMPLETE_SRC: [f64; 4] = [128., 0., 128., 112.];
 const LEVEL_COMPLETE_START_DEST: [f64; 4] = [36., -112., 128., 112.];
 const LEVEL_COMPLETE_END_DEST: [f64; 4] = [36., 40., 128., 112.];
-
-const DARK: [f32; 4] = [0.3, 0.3, 0.3, 1.0];
-
-#[derive(Debug)]
-pub enum GameAction {
-    Stop,
-    Walk,
-    Push(usize),
-    ColorChange(Color),
-    Win,
-    Sink(usize, usize, Color),
-}
-
-enum HistoryEventType {
-    Walk,
-    Push,
-    Sink(Color),
-    ColorChange(Color),
-}
-
-struct HistoryEvent {
-    direction: Direction,
-    event_type: HistoryEventType,
-}
 
 pub enum State {
     Play,
@@ -53,11 +24,7 @@ pub enum State {
 
 pub struct GameView {
     texture: GlTexture,
-    light_buffer: FrameBuffer,
-    player: Player,
-    room: Room,
-    entities: Vec<Entity>,
-    light_color: Color,
+    scene: Scene,
     level_id: usize,
     cursor: Option<Player>,
     state: State,
@@ -69,22 +36,11 @@ pub struct GameView {
 
 impl GameView {
     pub fn new(level_id: usize) -> Self {
-        let mut texture_settings = opengl_graphics::TextureSettings::new();
-        texture_settings.set_mag(opengl_graphics::Filter::Nearest);
-
-        let canvas = image::ImageBuffer::new(800, 800);
-        let texture = GlTexture::from_image(&canvas, &texture_settings);
-        let light_buffer = FrameBuffer::new(texture);
-
-        let (room, player, entities, light_color) = Room::new(level_id);
-        let (cx, cy) = player.center();
-        let mut game = GameView {
+        let scene = Scene::new(level_id);
+        let (cx, cy) = scene.player.center();
+        GameView {
             texture: crate::app::load_texture(),
-            light_buffer,
-            player,
-            room,
-            entities,
-            light_color: Color::GRAY,
+            scene,
             level_id,
             cursor: None,
             state: State::Play,
@@ -92,60 +48,11 @@ impl GameView {
             history: Vec::new(),
             fade: Some(CircleWipe::new_out(cx as f64, cy as f64)),
             staged_transition: None,
-        };
-        game.set_light_color(light_color);
-        game
-    }
-
-    fn absolute_context(&self) -> Context {
-        Context::new_abs(DISPLAY_WIDTH, DISPLAY_HEIGHT)
-    }
-
-    fn camera_context(&self) -> Context {
-        let (x, y) = self.camera();
-        let x = x as f64;
-        let y = y as f64;
-        self.absolute_context()
-            .trans(-x + DISPLAY_WIDTH / 2., -y + DISPLAY_HEIGHT / 2.)
-    }
-
-    fn camera_context2(&self) -> Context {
-        let (x, y) = self.camera();
-        let x = x as f64;
-        let y = y as f64;
-        Context::new_abs(800., 800.)
-            .zoom(4.)
-            .trans(-x + DISPLAY_WIDTH / 2., -y + DISPLAY_HEIGHT / 2.)
-    }
-
-    // TODO: if the level's too small probably center it instead
-    fn camera(&self) -> (i64, i64) {
-        let (x, y) = self.player.center();
-        (
-            x.clamp(DISPLAY_WIDTH_HALF, self.room.pixel_width() - DISPLAY_WIDTH_HALF),
-            y.clamp(DISPLAY_HEIGHT_HALF, self.room.pixel_height() - DISPLAY_HEIGHT_HALF),
-        )
-    }
-
-    fn render_lights(&mut self, args: &RenderArgs, gl: &mut GlGraphics, draw_state: &DrawState, context: &Context) {
-        self.light_buffer.draw(args.viewport(), gl, |_, gl| {
-            piston_window::clear(DARK, gl);
-            let lights: Vec<_> = self.entities.iter().filter_map(|e| {
-                if let Entity::Lightbulb(bulb) = e { Some(bulb) }
-                else { None }
-            }).collect();
-
-            for light in lights {
-                light.draw_light(&context, draw_state, gl);
-            }
-        });
+        }
     }
 
     pub fn render(&mut self, args: &RenderArgs, gl: &mut GlGraphics) {
-        let context2 = self.camera_context2();
-
-        let draw_state = DrawState::default();
-        self.render_lights(args, gl, &draw_state, &context2);
+        self.scene.render_lights(args, gl);
 
         gl.draw(args.viewport(), |_, gl| {
             piston_window::clear([0.0, 0.0, 0.0, 1.0], gl);
@@ -154,43 +61,12 @@ impl GameView {
     }
 
     fn render_game(&mut self, draw_state: &DrawState, gl: &mut GlGraphics) {
-        // Camera
-        let context = self.camera_context();
+        self.scene.render_game(draw_state, gl);
 
-        // Action
-        self.room.render(
-            &self.texture,
-            draw_state,
-            &context,
-            gl,
-        );
-
-        for entity in &self.entities {
-            entity.sprite().draw(
-                &self.texture,
-                draw_state,
-                context.transform,
-                gl,
-            );
-        }
-
-        self.player.sprite().draw(
-            &self.texture,
-            draw_state,
-            context.transform,
-            gl,
-        );
-
-        // Lights
-        Image::new().draw(
-            self.light_buffer.texture(),
-            &draw_state.blend(Blend::Multiply),
-            Context::new_abs(800., 800.).flip_v().trans(0., -800.).transform,
-            gl,
-        );
+        let context = self.scene.camera_context();
 
         // Thoughts
-        let (px, py) = self.player.pixel_coord();
+        let (px, py) = self.scene.player.pixel_coord();
         self.thought.render(
             &self.texture,
             draw_state,
@@ -199,13 +75,17 @@ impl GameView {
         );
     }
 
+    fn absolute_context(&self) -> Context {
+        Context::new_abs(DISPLAY_WIDTH, DISPLAY_HEIGHT)
+    }
+
     pub fn render_scene(&mut self, gl: &mut GlGraphics) {
-        let context = self.camera_context();
         let abs_context = self.absolute_context();
         let cursor_context = abs_context.trans(46., 107.);
 
         let draw_state = if let Some(fade) = &self.fade {
-            let fade_context = if self.cursor.is_some() { cursor_context } else { context };
+            let fade_context = if self.cursor.is_some() { cursor_context }
+                else { self.scene.camera_context() };
             fade.render(&fade_context, gl);
             DrawState::new_inside()
         }
@@ -233,10 +113,7 @@ impl GameView {
     }
 
     pub fn update(&mut self, args: &UpdateArgs, held_keys: &mut HeldKeys) -> Option<Transition> {
-        self.player.update(args);
-        for entity in self.entities.iter_mut() {
-            entity.update(args);
-        }
+        self.scene.update(args);
         self.thought.update(args);
 
         if let Some(fade) = &mut self.fade {
@@ -268,67 +145,19 @@ impl GameView {
             match input {
                 Input::Navigate(direction) => {
                     self.thought.dismiss();
-                    self.player.face(direction);
-                    let (nx, ny) = direction.from(self.player.x, self.player.y);
-                    if self.player.can_walk() && self.tile_is_passable(nx, ny) {
-                        let action = if let Some(entity_id) = self.entity_id_at(nx, ny) {
-                            self.entities[entity_id].on_approach(entity_id, direction, self)
+                    match self.scene.navigate(direction) {
+                        Some(HistoryEvent { event_type: HistoryEventType::Win, .. }) => {
+                            self.state = State::Win(0.);
+                            return Some(Transition::Win(self.level_id));
                         }
-                        else { GameAction::Walk };
-                        return self.handle_action(direction, action);
+                        Some(evt) => { self.history.push(evt); }
+                        None => (),
                     }
                 }
                 Input::Accept => { self.fade_out(Transition::Menu(self.level_id)); }
                 Input::Reject => { self.undo(); }
                 Input::Help => { self.thought.think(); }
             }
-        }
-        None
-    }
-
-    fn handle_action(&mut self, direction: Direction, action: GameAction) -> Option<Transition> {
-        if matches!(action, GameAction::Stop) { return None; }
-        self.player.walk(direction);
-        match action {
-            GameAction::Walk => {
-                self.history.push(HistoryEvent {
-                    direction: direction.reverse(),
-                    event_type: HistoryEventType::Walk,
-                });
-            },
-            GameAction::ColorChange(color) => {
-                self.history.push(HistoryEvent {
-                    direction: direction.reverse(),
-                    event_type: HistoryEventType::ColorChange(self.light_color.clone()),
-                });
-                self.set_light_color(color);
-            }
-            GameAction::Win => {
-                self.state = State::Win(0.);
-                return Some(Transition::Win(self.level_id));
-            }
-            GameAction::Sink(idx1, idx2, color) => {
-                self.history.push(HistoryEvent {
-                    direction: direction.reverse(),
-                    event_type: HistoryEventType::Sink(color),
-                });
-                let mut idx = 0;
-                self.entities.retain(|_| {
-                    let m = idx1 != idx && idx2 != idx;
-                    idx += 1;
-                    m
-                });
-            }
-            GameAction::Push(entity_id) => {
-                self.history.push(HistoryEvent {
-                    direction: direction.reverse(),
-                    event_type: HistoryEventType::Push,
-                });
-                if let Entity::Block(block) = &mut self.entities[entity_id] {
-                    block.push(direction);
-                } else { unreachable!(); }
-            }
-            GameAction::Stop => unreachable!(),
         }
         None
     }
@@ -361,47 +190,8 @@ impl GameView {
         None
     }
 
-    pub fn set_light_color(&mut self, color: Color) {
-        if self.light_color == color { return; }
-        for entity in self.entities.iter_mut() {
-            if let Entity::Lightbulb(bulb) = entity {
-                if bulb.color == self.light_color { bulb.turn_off(); }
-                else if bulb.color == color { bulb.turn_on(); }
-            }
-        }
-        self.light_color = color;
-    }
-
-    pub fn tile_is_passable(&self, x: i32, y: i32) -> bool {
-        let tile = self.room.tile_at(x, y);
-        tile.map_or(false, |tile| tile.is_passable())
-    }
-
-    pub fn tile_in_light(&self, x: i32, y: i32, tile_color: Color) -> bool {
-        println!("light: {:?}; tile: {:?}", self.light_color, tile_color);
-        if self.light_color == Color::GRAY { return false; }
-        if tile_color == Color::WHITE { return true; }
-        println!("contains? {:?}", tile_color.contains(self.light_color));
-        tile_color.contains(self.light_color)
-            && self.room.tile_in_light(x, y, self.light_color)
-    }
-
-    pub fn entity_id_at(&self, x: i32, y: i32) -> Option<usize> {
-        self.entities.iter().position(|e| e.x() == x && e.y() == y)
-    }
-
-    pub fn entity_at(&self, x: i32, y: i32) -> Option<&Entity> {
-        let idx = self.entity_id_at(x, y)?;
-        Some(&self.entities[idx])
-    }
-
-    fn entity_at_mut(&mut self, x: i32, y: i32) -> Option<&mut Entity> {
-        let idx = self.entity_id_at(x, y)?;
-        Some(&mut self.entities[idx])
-    }
-
     fn fade_out(&mut self, transition: Transition) {
-        let (x, y) = self.cursor.as_ref().unwrap_or(&self.player).center();
+        let (x, y) = self.cursor.as_ref().unwrap_or(&self.scene.player).center();
         self.fade = Some(CircleWipe::new_in(x as f64, y as f64));
         self.staged_transition = Some(transition);
     }
@@ -411,27 +201,6 @@ impl GameView {
             Some(value) => value,
             None => return,
         };
-        let px = self.player.x;
-        let py = self.player.y;
-        match event.event_type {
-            HistoryEventType::Walk => (),
-            HistoryEventType::Push => {
-                let (bx, by) = event.direction.reverse().from(px, py);
-                if let Some(Entity::Block(block)) = self.entity_at_mut(bx, by) {
-                    block.x = px;
-                    block.y = py;
-                }
-            },
-            HistoryEventType::Sink(color) => {
-                let (bx, by) = event.direction.reverse().from(px, py);
-                self.entities.push(Entity::Block(Block::new(px, py, color)));
-                self.entities.push(Entity::Water(Water::new(bx, by)));
-            },
-            HistoryEventType::ColorChange(color) => {
-                // TODO: too gentle! hard switch!
-                self.set_light_color(color);
-            },
-        }
-        self.player.undo(event.direction);
+        self.scene.undo(event);
     }
 }

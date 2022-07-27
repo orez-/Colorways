@@ -2,7 +2,7 @@ use piston_window::Image;
 use crate::app::Direction;
 use crate::color::Color;
 use crate::entity::IEntity;
-use crate::view::{GameAction, GameView};
+use crate::scene::{Scene, GameAction};
 
 const TILE_SIZE: f64 = 16.;
 const WATER: [f64; 4] = [32., 64., TILE_SIZE, TILE_SIZE];
@@ -38,8 +38,8 @@ impl IEntity for Water {
             .rect([x, y, TILE_SIZE, TILE_SIZE])
     }
 
-    fn on_approach(&self, _entity_id: usize, _direction: Direction, view: &GameView) -> GameAction {
-        if view.tile_in_light(self.x, self.y, Color::BLUE) { return GameAction::Walk; }
+    fn on_approach(&self, _entity_id: usize, _direction: Direction, scene: &Scene) -> GameAction {
+        if scene.tile_in_light(self.x, self.y, Color::BLUE) { return GameAction::Walk; }
         GameAction::Stop
     }
 }

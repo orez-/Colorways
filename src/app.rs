@@ -11,16 +11,6 @@ where T: std::ops::Sub<Output = T> + std::ops::Mul<Output = T> + std::ops::Add<O
     (right - left) * p + left
 }
 
-pub fn lerp4<T>(left: [T; 4], right: [T; 4], p: T) -> [T; 4]
-where T: std::ops::Sub<Output = T> + std::ops::Mul<Output = T> + std::ops::Add<Output = T> + Copy {
-    [
-        lerp(left[0], right[0], p),
-        lerp(left[1], right[1], p),
-        lerp(left[2], right[2], p),
-        lerp(left[3], right[3], p),
-    ]
-}
-
 pub fn int_lerp4(left: [f64; 4], right: [f64; 4], p: f64) -> [f64; 4] {
     [
         lerp(left[0], right[0], p) as i64 as f64,

@@ -1,13 +1,13 @@
 use piston_window::{Image, UpdateArgs};
 use crate::app::Direction;
-use crate::view::{GameAction, GameView};
+use crate::scene::{Scene, GameAction};
 use crate::entity;
 
 // The boilerplatenest file. Try to stay out of here as much as possible.
 pub trait IEntity {
     fn sprite(&self) -> Image;
     fn update(&mut self, _args: &UpdateArgs) { }
-    fn on_approach(&self, entity_id: usize, direction: Direction, view: &GameView) -> GameAction;
+    fn on_approach(&self, entity_id: usize, direction: Direction, scene: &Scene) -> GameAction;
     fn is_dead(&self) -> bool { false }
 }
 
@@ -63,13 +63,13 @@ impl IEntity for Entity {
         }
     }
 
-    fn on_approach(&self, entity_id: usize, direction: Direction, view: &GameView) -> GameAction {
+    fn on_approach(&self, entity_id: usize, direction: Direction, scene: &Scene) -> GameAction {
         match self {
-            Block(e) => e.on_approach(entity_id, direction, view),
-            Exit(e) => e.on_approach(entity_id, direction, view),
-            Lightbulb(e) => e.on_approach(entity_id, direction, view),
-            LightSwitch(e) => e.on_approach(entity_id, direction, view),
-            Water(e) => e.on_approach(entity_id, direction, view),
+            Block(e) => e.on_approach(entity_id, direction, scene),
+            Exit(e) => e.on_approach(entity_id, direction, scene),
+            Lightbulb(e) => e.on_approach(entity_id, direction, scene),
+            LightSwitch(e) => e.on_approach(entity_id, direction, scene),
+            Water(e) => e.on_approach(entity_id, direction, scene),
         }
     }
 

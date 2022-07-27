@@ -2,7 +2,7 @@ use piston_window::{Image, UpdateArgs};
 use crate::app::Direction;
 use crate::color::Color;
 use crate::entity::{Entity, IEntity};
-use crate::view::{GameAction, GameView};
+use crate::scene::{Scene, GameAction};
 
 const TILE_SIZE: f64 = 16.;
 const BLOCK_WIDTH: f64 = TILE_SIZE;
@@ -91,13 +91,13 @@ impl IEntity for Block {
         }
     }
 
-    fn on_approach(&self, entity_id: usize, direction: Direction, view: &GameView) -> GameAction {
-        if view.tile_in_light(self.x, self.y, self.color) { return GameAction::Walk; }
+    fn on_approach(&self, entity_id: usize, direction: Direction, scene: &Scene) -> GameAction {
+        if scene.tile_in_light(self.x, self.y, self.color) { return GameAction::Walk; }
         let (nx, ny) = direction.from(self.x, self.y);
-        if !view.tile_is_passable(nx, ny) { return GameAction::Stop; }
-        match view.entity_at(nx, ny) {
+        if !scene.tile_is_passable(nx, ny) { return GameAction::Stop; }
+        match scene.entity_at(nx, ny) {
             Some(Entity::Water(_)) => {
-                let water_id = view.entity_id_at(nx, ny).unwrap();
+                let water_id = scene.entity_id_at(nx, ny).unwrap();
                 GameAction::Sink(entity_id, water_id, self.color.clone())
             }
             Some(_) => GameAction::Stop,

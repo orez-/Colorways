@@ -4,7 +4,7 @@ use piston_window::draw_state::Blend;
 use crate::app::Direction;
 use crate::color::Color;
 use crate::entity::IEntity;
-use crate::view::{GameAction, GameView};
+use crate::scene::{Scene, GameAction};
 
 const TILE_SIZE: f64 = 16.;
 const LIGHTBULB_ON: [f64; 4] = [16., 16., TILE_SIZE, TILE_SIZE];
@@ -122,7 +122,7 @@ impl IEntity for Lightbulb {
         }
     }
 
-    fn on_approach(&self, _entity_id: usize, _direction: Direction, _game: &GameView) -> GameAction {
+    fn on_approach(&self, _entity_id: usize, _direction: Direction, _game: &Scene) -> GameAction {
         GameAction::Stop
     }
 }
