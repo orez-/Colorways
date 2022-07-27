@@ -8,6 +8,7 @@ mod entity;
 mod line_of_sight;
 mod room;
 mod scene;
+mod scene_config;
 mod view;
 
 fn main() {

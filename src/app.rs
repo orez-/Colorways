@@ -56,7 +56,7 @@ impl App {
     pub fn update(&mut self, args: &UpdateArgs) {
         match self.view.update(args, &mut self.held_keys) {
             Some(Transition::Game(level_id)) => {
-                let top = crate::room::NUM_LEVELS - 1;
+                let top = crate::scene_config::NUM_LEVELS - 1;
                 if level_id > top { self.nav_to_menu(top); }
                 else { self.view = View::game(level_id); }
             },

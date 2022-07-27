@@ -5,8 +5,8 @@ use crate::app::{Direction, HeldKeys, Input};
 use crate::circle_wipe::CircleWipe;
 use crate::color::Color;
 use crate::entity::Player;
-use crate::room::Room;
 use crate::scene::{Scene, CameraMode};
+use crate::scene_config::SceneConfig;
 use crate::view::Transition;
 
 const DISPLAY_WIDTH: f64 = 200.;
@@ -44,7 +44,7 @@ pub struct TitleView {
 
 impl TitleView {
     pub fn new() -> Self {
-        let game = Room::new_title();
+        let game = SceneConfig::new_title();
         let camera_mode = CameraMode::offset(ROOM_OFFSET_X as i64, ROOM_OFFSET_Y as i64);
 
         Self {

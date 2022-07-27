@@ -1,7 +1,8 @@
 use crate::app::Direction;
 use crate::color::Color;
 use crate::entity::{Block, Entity, IEntity, Player, Water};
-use crate::room::{Room, Game};
+use crate::room::Room;
+use crate::scene_config::SceneConfig;
 use opengl_framebuffer::FrameBuffer;
 use opengl_graphics::GlGraphics;
 use opengl_graphics::Texture as GlTexture;
@@ -61,8 +62,8 @@ pub struct Scene {
 }
 
 impl Scene {
-    pub fn new(game: Game, camera_mode: CameraMode) -> Self {
-        let (room, player, entities, light_color) = game;
+    pub fn new(config: SceneConfig, camera_mode: CameraMode) -> Self {
+        let SceneConfig {room, player, entities, starting_color} = config;
         let mut texture_settings = opengl_graphics::TextureSettings::new();
         texture_settings.set_mag(opengl_graphics::Filter::Nearest);
 
@@ -79,7 +80,7 @@ impl Scene {
             light_color: Color::GRAY,
             camera_mode,
         };
-        this.set_light_color(light_color);
+        this.set_light_color(starting_color);
         this
     }
 

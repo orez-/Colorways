@@ -3,8 +3,8 @@ mod thought;
 use crate::app::{int_lerp4, Direction, HeldKeys, Input};
 use crate::circle_wipe::CircleWipe;
 use crate::entity::Player;
-use crate::room::Room;
 use crate::scene::{Scene, CameraMode, HistoryEvent, HistoryEventType};
+use crate::scene_config::SceneConfig;
 use crate::view::game::thought::Thought;
 use crate::view::Transition;
 use opengl_graphics::GlGraphics;
@@ -37,9 +37,9 @@ pub struct GameView {
 
 impl GameView {
     pub fn new(level_id: usize) -> Self {
-        let game = Room::new(level_id);
+        let scene_config = SceneConfig::new(level_id);
         let camera_mode = CameraMode::Player;
-        let scene = Scene::new(game, camera_mode);
+        let scene = Scene::new(scene_config, camera_mode);
         let (cx, cy) = scene.player.center();
         GameView {
             texture: crate::app::load_texture(),
