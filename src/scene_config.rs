@@ -4,6 +4,7 @@ use crate::line_of_sight::{line_of_sight, Visibility};
 use crate::room::{Room, Tile};
 use geo::polygon;
 
+const AMBIENT_DEFAULT: [f32; 4] = [0.6, 0.6, 0.6, 1.0];
 const ONE_START_MSG: &str = "level must have exactly one starting position";
 pub const NUM_LEVELS: usize = 8;
 const LEVELS: [&[u8]; NUM_LEVELS] = [
@@ -24,6 +25,7 @@ pub struct SceneConfig {
     pub player: Player,
     pub entities: Vec<Entity>,
     pub starting_color: Color,
+    pub ambient_color: [f32; 4],
 }
 
 impl SceneConfig {
@@ -32,7 +34,9 @@ impl SceneConfig {
     }
 
     pub fn new_title() -> Self {
-        SceneConfig::from_file(TITLE_LEVEL)
+        let mut sc = SceneConfig::from_file(TITLE_LEVEL);
+        sc.ambient_color = [0.9, 0.9, 0.9, 1.0];
+        sc
     }
 
     pub fn from_file(bytes: &[u8]) -> Self {
@@ -112,6 +116,7 @@ impl SceneConfig {
             player: player.expect(ONE_START_MSG),
             entities,
             starting_color,
+            ambient_color: AMBIENT_DEFAULT,
         }
     }
 }

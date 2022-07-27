@@ -9,7 +9,6 @@ use opengl_graphics::Texture as GlTexture;
 use piston_window::{Context, DrawState, Image, RenderArgs, Transformed, UpdateArgs};
 use piston_window::draw_state::Blend;
 
-const AMBIENT: [f32; 4] = [0.6, 0.6, 0.6, 1.0];
 const LIGHT_BASE: [f32; 4] = [0.3, 0.3, 0.3, 1.0];
 
 const DISPLAY_WIDTH: f64 = 200.;
@@ -59,11 +58,12 @@ pub struct Scene {
     entities: Vec<Entity>,
     light_color: Color,
     camera_mode: CameraMode,
+    ambient_color: [f32; 4],
 }
 
 impl Scene {
     pub fn new(config: SceneConfig, camera_mode: CameraMode) -> Self {
-        let SceneConfig {room, player, entities, starting_color} = config;
+        let SceneConfig {room, player, entities, starting_color, ambient_color} = config;
         let mut texture_settings = opengl_graphics::TextureSettings::new();
         texture_settings.set_mag(opengl_graphics::Filter::Nearest);
 
@@ -79,6 +79,7 @@ impl Scene {
             entities,
             light_color: Color::GRAY,
             camera_mode,
+            ambient_color,
         };
         this.set_light_color(starting_color);
         this
@@ -133,7 +134,7 @@ impl Scene {
         let draw_state = DrawState::default();
 
         self.light_buffer.draw(args.viewport(), gl, |_, gl| {
-            piston_window::clear(AMBIENT, gl);
+            piston_window::clear(self.ambient_color, gl);
             let lights: Vec<_> = self.entities.iter().filter_map(|e| {
                 if let Entity::Lightbulb(bulb) = e { Some(bulb) }
                 else { None }
