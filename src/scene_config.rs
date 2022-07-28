@@ -2,6 +2,7 @@ use crate::color::Color;
 use crate::entity::{Block, Entity, Exit, Lightbulb, LightSwitch, Player, Water};
 use crate::line_of_sight::{line_of_sight, Visibility};
 use crate::room::{Room, Tile};
+use crate::scene::SceneTag;
 use geo::polygon;
 
 const AMBIENT_DEFAULT: [f32; 4] = [0.6, 0.6, 0.6, 1.0];
@@ -26,6 +27,7 @@ pub struct SceneConfig {
     pub entities: Vec<Entity>,
     pub starting_color: Color,
     pub ambient_color: [f32; 4],
+    pub tag: Option<SceneTag>,
 }
 
 impl SceneConfig {
@@ -46,6 +48,12 @@ impl SceneConfig {
             b'B' => Color::BLUE,
             _ => Color::GRAY,
         };
+        let tag = match bytes[1] {
+            b'm' => Some(SceneTag::TeachMove),
+            b'u' => Some(SceneTag::TeachUndo),
+            b'\n' => None,
+            t => { panic!("Unrecognized tag id {:?}", t as char); }
+        };
         let first_line = bytes.iter().position(|&c| c == b'\n').unwrap() + 1;
         let bytes = &bytes[first_line..];
         let width = bytes.iter().position(|&c| c == b'\n').unwrap();
@@ -62,46 +70,46 @@ impl SceneConfig {
         let mut player = None;
         let mut entities = Vec::new();
         for &byte in bytes {
-            match byte as char {
-                'a' => {
+            match byte {
+                b'a' => {
                     if player.is_some() { panic!("{}", ONE_START_MSG); }
                     player = Some(Player::new(x, y));
                 },
-                'k' => { entities.push(Entity::Block(Block::new(x, y, Color::GRAY))); },
-                'r' => { entities.push(Entity::Block(Block::new(x, y, Color::RED))); },
-                'g' => { entities.push(Entity::Block(Block::new(x, y, Color::GREEN))); },
-                'b' => { entities.push(Entity::Block(Block::new(x, y, Color::BLUE))); },
-                'y' => { entities.push(Entity::Block(Block::new(x, y, Color::YELLOW))); },
-                'c' => { entities.push(Entity::Block(Block::new(x, y, Color::CYAN))); },
-                'm' => { entities.push(Entity::Block(Block::new(x, y, Color::MAGENTA))); },
-                'w' => { entities.push(Entity::Block(Block::new(x, y, Color::WHITE))); },
-                'R' => {
+                b'k' => { entities.push(Entity::Block(Block::new(x, y, Color::GRAY))); },
+                b'r' => { entities.push(Entity::Block(Block::new(x, y, Color::RED))); },
+                b'g' => { entities.push(Entity::Block(Block::new(x, y, Color::GREEN))); },
+                b'b' => { entities.push(Entity::Block(Block::new(x, y, Color::BLUE))); },
+                b'y' => { entities.push(Entity::Block(Block::new(x, y, Color::YELLOW))); },
+                b'c' => { entities.push(Entity::Block(Block::new(x, y, Color::CYAN))); },
+                b'm' => { entities.push(Entity::Block(Block::new(x, y, Color::MAGENTA))); },
+                b'w' => { entities.push(Entity::Block(Block::new(x, y, Color::WHITE))); },
+                b'R' => {
                     let Visibility { polygon_pts, tiles } = line_of_sight(x, y, width, height, &walls_polygon);
                     for idx in tiles {
                         sees_color[idx][0] = true;
                     }
                     entities.push(Entity::Lightbulb(Lightbulb::new(x, y, Color::RED, polygon_pts)));
                 },
-                'G' => {
+                b'G' => {
                     let Visibility { polygon_pts, tiles } = line_of_sight(x, y, width, height, &walls_polygon);
                     for idx in tiles {
                         sees_color[idx][1] = true;
                     }
                     entities.push(Entity::Lightbulb(Lightbulb::new(x, y, Color::GREEN, polygon_pts)));
                 },
-                'B' => {
+                b'B' => {
                     let Visibility { polygon_pts, tiles } = line_of_sight(x, y, width, height, &walls_polygon);
                     for idx in tiles {
                         sees_color[idx][2] = true;
                     }
                     entities.push(Entity::Lightbulb(Lightbulb::new(x, y, Color::BLUE, polygon_pts)));
                 },
-                '1' => { entities.push(Entity::LightSwitch(LightSwitch::new(x, y, Color::RED))); },
-                '2' => { entities.push(Entity::LightSwitch(LightSwitch::new(x, y, Color::GREEN))); },
-                '3' => { entities.push(Entity::LightSwitch(LightSwitch::new(x, y, Color::BLUE))); },
-                'z' => { entities.push(Entity::Exit(Exit::new(x, y))); },
-                '~' => { entities.push(Entity::Water(Water::new(x, y))); },
-                '\n' => {
+                b'1' => { entities.push(Entity::LightSwitch(LightSwitch::new(x, y, Color::RED))); },
+                b'2' => { entities.push(Entity::LightSwitch(LightSwitch::new(x, y, Color::GREEN))); },
+                b'3' => { entities.push(Entity::LightSwitch(LightSwitch::new(x, y, Color::BLUE))); },
+                b'z' => { entities.push(Entity::Exit(Exit::new(x, y))); },
+                b'~' => { entities.push(Entity::Water(Water::new(x, y))); },
+                b'\n' => {
                     x = 0;
                     y += 1;
                     continue;
@@ -117,6 +125,7 @@ impl SceneConfig {
             entities,
             starting_color,
             ambient_color: AMBIENT_DEFAULT,
+            tag,
         }
     }
 }

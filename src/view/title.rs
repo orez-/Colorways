@@ -1,9 +1,10 @@
 use opengl_graphics::GlGraphics;
 use opengl_graphics::Texture as GlTexture;
-use piston_window::{Context, DrawState, Image, RenderArgs, Transformed, UpdateArgs};
+use piston_window::{Context, DrawState, RenderArgs, Transformed, UpdateArgs};
 use crate::app::{Direction, HeldKeys, Input};
 use crate::circle_wipe::CircleWipe;
 use crate::color::Color;
+use crate::decal::Decal;
 use crate::entity::Player;
 use crate::scene::{Scene, CameraMode};
 use crate::scene_config::SceneConfig;
@@ -13,20 +14,42 @@ const DISPLAY_WIDTH: f64 = 200.;
 const DISPLAY_HEIGHT: f64 = 200.;
 const ROOM_OFFSET_X: f64 = 20.;
 const ROOM_OFFSET_Y: f64 = 24.;
-const LOGO_LEFT_SRC: [f64; 4] = [0., 80., 80., 80.];
-const LOGO_LEFT_DEST: [f64; 4] = [4., 9., 80., 80.];
-const LOGO_RIGHT_SRC: [f64; 4] = [80., 112., 112., 48.];
-const LOGO_RIGHT_DEST: [f64; 4] = [84., 41., 112., 48.];
-const INPUT_CHECK_SRC: [f64; 4] = [48., 48., 80., 16.];
-const INPUT_CHECK_DEST: [f64; 4] = [96. - ROOM_OFFSET_X, 112. - ROOM_OFFSET_Y, 80., 16.];
-const PLAY_NOW_SRC: [f64; 4] = [48., 0., 80., 16.];
-const PLAY_NOW_DEST: [f64; 4] = [96. - ROOM_OFFSET_X, 112. - ROOM_OFFSET_Y, 80., 16.];
-const LEVELS_SRC: [f64; 4] = [48., 16., 48., 16.];
-const LEVELS_DEST: [f64; 4] = [96. - ROOM_OFFSET_X, 128. - ROOM_OFFSET_Y, 48., 16.];
-const CREDITS_SRC: [f64; 4] = [48., 32., 80., 16.];
-const CREDITS_DEST: [f64; 4] = [96. - ROOM_OFFSET_X, 144. - ROOM_OFFSET_Y, 80., 16.];
-const AUTHOR_SRC: [f64; 4] = [48., 64., 80., 16.];
-const AUTHOR_DEST: [f64; 4] = [110., 184., 80., 16.];
+
+const LOGO_LEFT: Decal = Decal {
+    src_left: 0., src_top: 80.,
+    dest_left: 4., dest_top: 9.,
+    width: 80., height: 80.,
+};
+const LOGO_RIGHT: Decal = Decal {
+    src_left: 80., src_top: 112.,
+    dest_left: 84., dest_top: 41.,
+    width: 112., height: 48.,
+};
+const INPUT_CHECK: Decal = Decal {
+    src_left: 48., src_top: 48.,
+    dest_left: 96. - ROOM_OFFSET_X, dest_top: 112. - ROOM_OFFSET_Y,
+    width: 80., height: 16.,
+};
+const PLAY_NOW: Decal = Decal {
+    src_left: 48., src_top: 0.,
+    dest_left: 96. - ROOM_OFFSET_X, dest_top: 112. - ROOM_OFFSET_Y,
+    width: 80., height: 16.,
+};
+const LEVELS: Decal = Decal {
+    src_left: 48., src_top: 16.,
+    dest_left: 96. - ROOM_OFFSET_X, dest_top: 128. - ROOM_OFFSET_Y,
+    width: 48., height: 16.,
+};
+const CREDITS: Decal = Decal {
+    src_left: 48., src_top: 32.,
+    dest_left: 96. - ROOM_OFFSET_X, dest_top: 144. - ROOM_OFFSET_Y,
+    width: 80., height: 16.,
+};
+const AUTHOR: Decal = Decal {
+    src_left: 48., src_top: 64.,
+    dest_left: 110., dest_top: 184.,
+    width: 80., height: 16.,
+};
 
 enum State {
     InputCheck,
@@ -79,25 +102,25 @@ impl TitleView {
 
         self.scene.render_stuff(&draw_state, gl);
 
-        let mut draw_sprite = |src: [f64; 4], dest: [f64; 4]| {
-            Image::new().src_rect(src).rect(dest).draw(
+        let mut draw_decal = |decal: Decal| {
+            decal.sprite().draw(
                 &self.texture,
                 &draw_state,
                 context.transform,
                 gl,
             );
         };
-        draw_sprite(LOGO_LEFT_SRC, LOGO_LEFT_DEST);
-        draw_sprite(LOGO_RIGHT_SRC, LOGO_RIGHT_DEST);
+        draw_decal(LOGO_LEFT);
+        draw_decal(LOGO_RIGHT);
         match self.state {
             State::InputCheck => {
-                draw_sprite(INPUT_CHECK_SRC, INPUT_CHECK_DEST);
+                draw_decal(INPUT_CHECK);
             },
             State::Menu => {
-                draw_sprite(PLAY_NOW_SRC, PLAY_NOW_DEST);
-                draw_sprite(LEVELS_SRC, LEVELS_DEST);
-                draw_sprite(CREDITS_SRC, CREDITS_DEST);
-                draw_sprite(AUTHOR_SRC, AUTHOR_DEST);
+                draw_decal(PLAY_NOW);
+                draw_decal(LEVELS);
+                draw_decal(CREDITS);
+                draw_decal(AUTHOR);
                 self.cursor.sprite().draw(
                     &self.texture,
                     &draw_state,

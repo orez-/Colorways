@@ -48,9 +48,15 @@ pub struct HistoryEvent {
     pub event_type: HistoryEventType,
 }
 
+pub enum SceneTag {
+    TeachMove,
+    TeachUndo,
+}
+
 pub struct Scene {
     texture: GlTexture,
     light_buffer: FrameBuffer,
+    pub tag: Option<SceneTag>,
     pub player: Player,
     room: Room,
     entities: Vec<Entity>,
@@ -61,7 +67,7 @@ pub struct Scene {
 
 impl Scene {
     pub fn new(config: SceneConfig, camera_mode: CameraMode) -> Self {
-        let SceneConfig {room, player, entities, starting_color, ambient_color} = config;
+        let SceneConfig {room, player, entities, starting_color, ambient_color, tag } = config;
         let mut texture_settings = opengl_graphics::TextureSettings::new();
         texture_settings.set_mag(opengl_graphics::Filter::Nearest);
 
@@ -72,6 +78,7 @@ impl Scene {
         let mut this = Self {
             texture: crate::app::load_texture(),
             light_buffer,
+            tag,
             player,
             room,
             entities,
@@ -149,11 +156,6 @@ impl Scene {
                 light.draw_light(&draw_state, &context, gl);
             }
         });
-    }
-
-    pub fn render_game(&self, draw_state: &DrawState, gl: &mut GlGraphics) {
-        self.render_stuff(draw_state, gl);
-        self.render_lights(draw_state, gl);
     }
 
     pub fn render_stuff(&self, draw_state: &DrawState, gl: &mut GlGraphics) {

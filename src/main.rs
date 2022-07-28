@@ -2,8 +2,9 @@ use piston_window::*;
 use sdl2_window::Sdl2Window;
 
 mod app;
-mod color;
 mod circle_wipe;
+mod color;
+mod decal;
 mod entity;
 mod line_of_sight;
 mod room;

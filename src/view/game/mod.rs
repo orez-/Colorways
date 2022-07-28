@@ -1,9 +1,10 @@
 mod thought;
 
 use crate::app::{int_lerp4, Direction, HeldKeys, Input};
+use crate::decal::Decal;
 use crate::circle_wipe::CircleWipe;
 use crate::entity::Player;
-use crate::scene::{Scene, CameraMode, HistoryEvent, HistoryEventType};
+use crate::scene::{Scene, SceneTag, CameraMode, HistoryEvent, HistoryEventType};
 use crate::scene_config::SceneConfig;
 use crate::view::game::thought::Thought;
 use crate::view::Transition;
@@ -17,6 +18,24 @@ const DISPLAY_HEIGHT: f64 = 200.;
 const LEVEL_COMPLETE_SRC: [f64; 4] = [128., 0., 128., 112.];
 const LEVEL_COMPLETE_START_DEST: [f64; 4] = [36., -112., 128., 112.];
 const LEVEL_COMPLETE_END_DEST: [f64; 4] = [36., 40., 128., 112.];
+
+const MOVE_LEFT: f64 = 80.;
+const MOVE_TOP: f64 = 136.;
+const MOVE_OPTIONS: Decal = Decal {
+    src_left: 0., src_top: 160.,
+    dest_left: MOVE_LEFT, dest_top: MOVE_TOP,
+    width: 112., height: 32.,
+};
+const MOVE_TEXT: Decal = Decal {
+    src_left: 0., src_top: 192.,
+    dest_left: MOVE_LEFT + 40., dest_top: MOVE_TOP + 32.,
+    width: 32., height: 16.,
+};
+const UNDO: Decal = Decal {
+    src_left: 112., src_top: 160.,
+    dest_left: 216., dest_top: 40.,
+    width: 32., height: 32.,
+};
 
 pub enum State {
     Play,
@@ -64,9 +83,29 @@ impl GameView {
     }
 
     fn render_game(&self, draw_state: &DrawState, gl: &mut GlGraphics) {
-        self.scene.render_game(draw_state, gl);
+        self.scene.render_stuff(draw_state, gl);
 
         let context = self.scene.camera_context();
+        let mut draw_decal = |decal: Decal| {
+            decal.sprite().draw(
+                &self.texture,
+                &draw_state,
+                context.transform,
+                gl,
+            );
+        };
+        match self.scene.tag {
+            Some(SceneTag::TeachMove) => {
+                draw_decal(MOVE_OPTIONS);
+                draw_decal(MOVE_TEXT);
+            }
+            Some(SceneTag::TeachUndo) => {
+                draw_decal(UNDO);
+            }
+            None => (),
+        }
+
+        self.scene.render_lights(draw_state, gl);
 
         // Thoughts
         let (px, py) = self.scene.player.pixel_coord();
