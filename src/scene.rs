@@ -9,8 +9,6 @@ use opengl_graphics::Texture as GlTexture;
 use piston_window::{Context, DrawState, Image, RenderArgs, Transformed, UpdateArgs};
 use piston_window::draw_state::Blend;
 
-const LIGHT_BASE: [f32; 4] = [0.3, 0.3, 0.3, 1.0];
-
 const DISPLAY_WIDTH: f64 = 200.;
 const DISPLAY_HEIGHT: f64 = 200.;
 const DISPLAY_WIDTH_HALF: i64 = DISPLAY_WIDTH as i64 / 2;
@@ -144,11 +142,11 @@ impl Scene {
             // This allows us to keep the lights primarily the color they're displaying,
             // while letting us independently set an ambient light for the scene.
             for light in &lights {
-                light.draw_light_fan(LIGHT_BASE, &draw_state, &context, gl);
+                light.draw_light_base(self.ambient_color, &draw_state, &context, gl);
             }
 
             for light in lights {
-                light.draw_light(&context, &draw_state, gl);
+                light.draw_light(&draw_state, &context, gl);
             }
         });
     }

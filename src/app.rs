@@ -11,6 +11,16 @@ where T: std::ops::Sub<Output = T> + std::ops::Mul<Output = T> + std::ops::Add<O
     (right - left) * p + left
 }
 
+pub fn lerpn<T, const N: usize>(left: [T; N], right: [T; N], p: T) -> [T; N]
+where T: std::ops::Sub<Output = T> + std::ops::Mul<Output = T> + std::ops::Add<Output = T> + Copy {
+    let mut i = 0;
+    left.map(|a| {
+        let b = right[i];
+        i += 1;
+        lerp(a, b, p)
+    })
+}
+
 pub fn int_lerp4(left: [f64; 4], right: [f64; 4], p: f64) -> [f64; 4] {
     [
         lerp(left[0], right[0], p) as i64 as f64,
