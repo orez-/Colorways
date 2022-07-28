@@ -2,9 +2,9 @@ use opengl_graphics::GlGraphics;
 use opengl_graphics::Texture as GlTexture;
 use piston_window::{Context, DrawState, Image, UpdateArgs};
 
-const MAIN_THOUGHT: [f64; 4] = [0., 160., 32., 32.];
-const SMALL_THOUGHT: [f64; 4] = [32., 160., 16., 16.];
-const MED_THOUGHT: [f64; 4] = [32., 176., 16., 16.];
+const MAIN_THOUGHT: [f64; 4] = [80., 80., 32., 32.];
+const SMALL_THOUGHT: [f64; 4] = [112., 80., 16., 16.];
+const MED_THOUGHT: [f64; 4] = [112., 96., 16., 16.];
 
 const MAIN_X: f64 = 0.;
 const MAIN_Y: f64 = -34.;
