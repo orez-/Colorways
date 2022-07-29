@@ -15,13 +15,6 @@ pub enum Tile {
 use Tile::*;
 
 impl Tile {
-    pub fn from_byte(byte: u8) -> Self {
-        match byte {
-            b'#' => Wall,
-            _ => Floor,
-        }
-    }
-
     pub fn sprite(&self, x: usize, y: usize) -> Image {
         let src = match self {
             Wall => WALL,

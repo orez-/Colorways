@@ -21,6 +21,22 @@ const LEVELS: [&[u8]; NUM_LEVELS] = [
 const TITLE_LEVEL: &[u8] = include_bytes!("../bin/levels/title.skb");
 const TILE_SIZE: f64 = 16.;
 
+// nightly-only as of 7/29/21 😩
+fn take_first<'a, T>(slice: &mut &'a [T]) -> Option<&'a T> {
+    let (first, rem) = slice.split_first()?;
+    *slice = rem;
+    Some(first)
+}
+
+fn take<'a, T>(slice: &mut &'a [T], range: std::ops::RangeTo<usize>) -> Option<&'a [T]> {
+    if range.end > slice.len() {
+        return None;
+    }
+    let (front, rem) = slice.split_at(range.end);
+    *slice = rem;
+    Some(front)
+}
+
 pub struct SceneConfig {
     pub room: Room,
     pub player: Player,
@@ -55,11 +71,17 @@ impl SceneConfig {
             t => { panic!("Unrecognized tag id {:?}", t as char); }
         };
         let first_line = bytes.iter().position(|&c| c == b'\n').unwrap() + 1;
-        let bytes = &bytes[first_line..];
+        let mut bytes = &bytes[first_line..];
+        // XXX: we're not strictly ascii anymore!!
+        // But... the top line should always be walls ### ..
+        // So maybe this is okay ᖍ(シ)ᖌ
         let width = bytes.iter().position(|&c| c == b'\n').unwrap();
         let tiles: Vec<_> = bytes.iter()
-            .filter_map(|&c| (c != b'\n').then(|| Tile::from_byte(c)))
-            .collect();
+            .filter_map(|&c| match c {
+                b'#' => Some(Tile::Wall),
+                b'\n' | b'\x80'..=b'\xff' => None,
+                _ => Some(Tile::Floor),
+            }).collect();
         let height = tiles.len() / width;
 
         let walls_polygon = to_walls_polygon(&tiles, width);
@@ -69,20 +91,20 @@ impl SceneConfig {
         let mut y = 0;
         let mut player = None;
         let mut entities = Vec::new();
-        for &byte in bytes {
+        while let Some(byte) = take_first(&mut bytes) {
             match byte {
                 b'a' => {
-                    if player.is_some() { panic!("{}", ONE_START_MSG); }
+                    if player.is_some() { panic!("{ONE_START_MSG}"); }
                     player = Some(Player::new(x, y));
                 }
-                b'k' => { entities.push(Entity::Block(Block::new(x, y, Color::GRAY))); }
-                b'r' => { entities.push(Entity::Block(Block::new(x, y, Color::RED))); }
-                b'g' => { entities.push(Entity::Block(Block::new(x, y, Color::GREEN))); }
-                b'b' => { entities.push(Entity::Block(Block::new(x, y, Color::BLUE))); }
-                b'y' => { entities.push(Entity::Block(Block::new(x, y, Color::YELLOW))); }
-                b'c' => { entities.push(Entity::Block(Block::new(x, y, Color::CYAN))); }
-                b'm' => { entities.push(Entity::Block(Block::new(x, y, Color::MAGENTA))); }
-                b'w' => { entities.push(Entity::Block(Block::new(x, y, Color::WHITE))); }
+                b'k' => { entities.push(Self::parse_entity_type(x, y, Color::GRAY, take(&mut bytes, ..2))); }
+                b'r' => { entities.push(Self::parse_entity_type(x, y, Color::RED, take(&mut bytes, ..2))); }
+                b'g' => { entities.push(Self::parse_entity_type(x, y, Color::GREEN, take(&mut bytes, ..2))); }
+                b'b' => { entities.push(Self::parse_entity_type(x, y, Color::BLUE, take(&mut bytes, ..2))); }
+                b'y' => { entities.push(Self::parse_entity_type(x, y, Color::YELLOW, take(&mut bytes, ..2))); }
+                b'c' => { entities.push(Self::parse_entity_type(x, y, Color::CYAN, take(&mut bytes, ..2))); }
+                b'm' => { entities.push(Self::parse_entity_type(x, y, Color::MAGENTA, take(&mut bytes, ..2))); }
+                b'w' => { entities.push(Self::parse_entity_type(x, y, Color::WHITE, take(&mut bytes, ..2))); }
                 b'R' => {
                     let Visibility { polygon_pts, tiles } = line_of_sight(x, y, width, height, &walls_polygon);
                     for idx in tiles {
@@ -104,9 +126,6 @@ impl SceneConfig {
                     }
                     entities.push(Entity::Lightbulb(Lightbulb::new(x, y, Color::BLUE, polygon_pts)));
                 }
-                b'1' => { entities.push(Entity::LightRadio(LightRadio::new(x, y, Color::RED))); }
-                b'2' => { entities.push(Entity::LightRadio(LightRadio::new(x, y, Color::GREEN))); }
-                b'3' => { entities.push(Entity::LightRadio(LightRadio::new(x, y, Color::BLUE))); }
                 b'z' => { entities.push(Entity::Exit(Exit::new(x, y))); }
                 b'~' => { entities.push(Entity::Water(Water::new(x, y))); }
                 b'\n' => {
@@ -115,7 +134,7 @@ impl SceneConfig {
                     continue;
                 }
                 b'#' | b'.' => (),
-                c => { panic!("Unexpected byte {c}"); }
+                c => { panic!("Unexpected byte {c:#02x}"); }
             }
             x += 1;
         }
@@ -127,6 +146,16 @@ impl SceneConfig {
             starting_color,
             ambient_color: AMBIENT_DEFAULT,
             tag,
+        }
+    }
+
+    fn parse_entity_type(x: i32, y: i32, color: Color, modifier: Option<&[u8]>) -> Entity {
+        match modifier {
+            Some(b"\xcc\x82") => Entity::LightToggle(LightToggle::new(x, y, color)),
+            Some(b"\xcc\x8a") => Entity::LightRadio(LightRadio::new(x, y, color)),
+            Some(b"\xcc\xbd") => Entity::Block(Block::new(x, y, color)),
+            Some(c) => { panic!("Unexpected modifier bytes {c:x?}"); }
+            None => { panic!("Not enough modifier bytes found"); }
         }
     }
 }
