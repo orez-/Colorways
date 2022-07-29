@@ -1,5 +1,6 @@
 use crate::app::{HeldKeys, Input};
 use crate::circle_wipe::CircleWipe;
+use crate::decal::Decal;
 use crate::entity::Player;
 use crate::view::Transition;
 use opengl_graphics::GlGraphics;
@@ -18,8 +19,18 @@ const LEVEL_OFFSET_X: f64 = 29.;
 const LEVEL_OFFSET_Y: f64 = 9.;
 const LEVEL_SPACING_X: f64 = LEVEL_WIDTH + LEVEL_PADDING;
 const LEVEL_SPACING_Y: f64 = LEVEL_HEIGHT + LEVEL_PADDING;
-const INSTRUCTION_SRC: [f64; 4] = [192., 112., 64., 48.];
-const INSTRUCTION_DEST: [f64; 4] = [68., 100., 64., 48.];
+const INSTRUCTION: Decal = Decal {
+    src_left: 192., src_top: 112.,
+    dest_left: 68., dest_top: 100.,
+    width: 64., height: 48.,
+};
+const STAR: Decal = Decal {
+    src_left: 96., src_top: 16.,
+    dest_left: 20., dest_top: -5.,
+    width: 16., height: 16.,
+};
+
+const BG_COLOR: [f32; 4] = [0.3, 0.3, 0.3, 1.0];
 
 pub struct MenuView {
     texture: GlTexture,
@@ -62,7 +73,7 @@ impl MenuView {
         }
         else { DrawState::default() };
 
-        Rectangle::new([0.3, 0.3, 0.3, 1.0]).draw(
+        Rectangle::new(BG_COLOR).draw(
             [0., 0., DISPLAY_WIDTH, DISPLAY_HEIGHT],
             &draw_state,
             context.transform,
@@ -83,31 +94,24 @@ impl MenuView {
             }
         }
 
-        for idx in &self.completed_levels {
-            let x = idx % LEVELS_HORIZONTAL;
-            let y = idx / LEVELS_HORIZONTAL;
-            let left = LEVEL_OFFSET_X + x as f64 * LEVEL_SPACING_X + 20.;
-            let top = LEVEL_OFFSET_Y + y as f64 * LEVEL_SPACING_Y - 5.;
-            Image::new()
-                .src_rect([96., 16., 16., 16.])
-                .rect([left, top, 16., 16.])
-                .draw(
-                    &self.texture,
-                    &draw_state,
-                    context.transform,
-                    gl,
-                );
-        }
-
-        Image::new()
-            .src_rect(INSTRUCTION_SRC)
-            .rect(INSTRUCTION_DEST)
-            .draw(
+        let mut draw_img = |img: Image| {
+            img.draw(
                 &self.texture,
                 &draw_state,
                 context.transform,
                 gl,
             );
+        };
+
+        for idx in &self.completed_levels {
+            let x = idx % LEVELS_HORIZONTAL;
+            let y = idx / LEVELS_HORIZONTAL;
+            let left = LEVEL_OFFSET_X + x as f64 * LEVEL_SPACING_X;
+            let top = LEVEL_OFFSET_Y + y as f64 * LEVEL_SPACING_Y;
+            draw_img(STAR.sprite_rel(left, top));
+        }
+
+        draw_img(INSTRUCTION.sprite());
 
         self.cursor.sprite().draw(
             &self.texture,

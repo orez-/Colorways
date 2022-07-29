@@ -24,4 +24,13 @@ impl Decal {
             .src_rect(self.src_rect())
             .rect(self.dest_rect())
     }
+
+    pub fn sprite_rel(&self, x: f64, y: f64) -> Image {
+        let mut dest = self.dest_rect();
+        dest[0] += x;
+        dest[1] += y;
+        Image::new()
+            .src_rect(self.src_rect())
+            .rect(dest)
+    }
 }
