@@ -74,47 +74,48 @@ impl SceneConfig {
                 b'a' => {
                     if player.is_some() { panic!("{}", ONE_START_MSG); }
                     player = Some(Player::new(x, y));
-                },
-                b'k' => { entities.push(Entity::Block(Block::new(x, y, Color::GRAY))); },
-                b'r' => { entities.push(Entity::Block(Block::new(x, y, Color::RED))); },
-                b'g' => { entities.push(Entity::Block(Block::new(x, y, Color::GREEN))); },
-                b'b' => { entities.push(Entity::Block(Block::new(x, y, Color::BLUE))); },
-                b'y' => { entities.push(Entity::Block(Block::new(x, y, Color::YELLOW))); },
-                b'c' => { entities.push(Entity::Block(Block::new(x, y, Color::CYAN))); },
-                b'm' => { entities.push(Entity::Block(Block::new(x, y, Color::MAGENTA))); },
-                b'w' => { entities.push(Entity::Block(Block::new(x, y, Color::WHITE))); },
+                }
+                b'k' => { entities.push(Entity::Block(Block::new(x, y, Color::GRAY))); }
+                b'r' => { entities.push(Entity::Block(Block::new(x, y, Color::RED))); }
+                b'g' => { entities.push(Entity::Block(Block::new(x, y, Color::GREEN))); }
+                b'b' => { entities.push(Entity::Block(Block::new(x, y, Color::BLUE))); }
+                b'y' => { entities.push(Entity::Block(Block::new(x, y, Color::YELLOW))); }
+                b'c' => { entities.push(Entity::Block(Block::new(x, y, Color::CYAN))); }
+                b'm' => { entities.push(Entity::Block(Block::new(x, y, Color::MAGENTA))); }
+                b'w' => { entities.push(Entity::Block(Block::new(x, y, Color::WHITE))); }
                 b'R' => {
                     let Visibility { polygon_pts, tiles } = line_of_sight(x, y, width, height, &walls_polygon);
                     for idx in tiles {
                         sees_color[idx][0] = true;
                     }
                     entities.push(Entity::Lightbulb(Lightbulb::new(x, y, Color::RED, polygon_pts)));
-                },
+                }
                 b'G' => {
                     let Visibility { polygon_pts, tiles } = line_of_sight(x, y, width, height, &walls_polygon);
                     for idx in tiles {
                         sees_color[idx][1] = true;
                     }
                     entities.push(Entity::Lightbulb(Lightbulb::new(x, y, Color::GREEN, polygon_pts)));
-                },
+                }
                 b'B' => {
                     let Visibility { polygon_pts, tiles } = line_of_sight(x, y, width, height, &walls_polygon);
                     for idx in tiles {
                         sees_color[idx][2] = true;
                     }
                     entities.push(Entity::Lightbulb(Lightbulb::new(x, y, Color::BLUE, polygon_pts)));
-                },
-                b'1' => { entities.push(Entity::LightRadio(LightRadio::new(x, y, Color::RED))); },
-                b'2' => { entities.push(Entity::LightRadio(LightRadio::new(x, y, Color::GREEN))); },
-                b'3' => { entities.push(Entity::LightRadio(LightRadio::new(x, y, Color::BLUE))); },
-                b'z' => { entities.push(Entity::Exit(Exit::new(x, y))); },
-                b'~' => { entities.push(Entity::Water(Water::new(x, y))); },
+                }
+                b'1' => { entities.push(Entity::LightRadio(LightRadio::new(x, y, Color::RED))); }
+                b'2' => { entities.push(Entity::LightRadio(LightRadio::new(x, y, Color::GREEN))); }
+                b'3' => { entities.push(Entity::LightRadio(LightRadio::new(x, y, Color::BLUE))); }
+                b'z' => { entities.push(Entity::Exit(Exit::new(x, y))); }
+                b'~' => { entities.push(Entity::Water(Water::new(x, y))); }
                 b'\n' => {
                     x = 0;
                     y += 1;
                     continue;
-                },
-                _ => (),
+                }
+                b'#' | b'.' => (),
+                c => { panic!("Unexpected byte {c}"); }
             }
             x += 1;
         }
