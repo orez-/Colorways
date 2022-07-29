@@ -98,7 +98,7 @@ impl IEntity for Block {
         match scene.entity_at(nx, ny) {
             Some(Entity::Water(_)) => {
                 let water_id = scene.entity_id_at(nx, ny).unwrap();
-                GameAction::Sink(entity_id, water_id, self.color.clone())
+                GameAction::Sink(entity_id, water_id, self.color)
             }
             Some(_) => GameAction::Stop,
             None => GameAction::Push(entity_id),

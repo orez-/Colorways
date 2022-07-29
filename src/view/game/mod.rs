@@ -89,7 +89,7 @@ impl GameView {
         let mut draw_decal = |decal: Decal| {
             decal.sprite().draw(
                 &self.texture,
-                &draw_state,
+                draw_state,
                 context.transform,
                 gl,
             );

@@ -1,5 +1,5 @@
 use crate::color::Color;
-use crate::entity::{Block, Entity, Exit, Lightbulb, LightSwitch, Player, Water};
+use crate::entity::{Block, Entity, Exit, Lightbulb, LightRadio, LightToggle, Player, Water};
 use crate::line_of_sight::{line_of_sight, Visibility};
 use crate::room::{Room, Tile};
 use crate::scene::SceneTag;
@@ -104,9 +104,9 @@ impl SceneConfig {
                     }
                     entities.push(Entity::Lightbulb(Lightbulb::new(x, y, Color::BLUE, polygon_pts)));
                 },
-                b'1' => { entities.push(Entity::LightSwitch(LightSwitch::new(x, y, Color::RED))); },
-                b'2' => { entities.push(Entity::LightSwitch(LightSwitch::new(x, y, Color::GREEN))); },
-                b'3' => { entities.push(Entity::LightSwitch(LightSwitch::new(x, y, Color::BLUE))); },
+                b'1' => { entities.push(Entity::LightRadio(LightRadio::new(x, y, Color::RED))); },
+                b'2' => { entities.push(Entity::LightRadio(LightRadio::new(x, y, Color::GREEN))); },
+                b'3' => { entities.push(Entity::LightRadio(LightRadio::new(x, y, Color::BLUE))); },
                 b'z' => { entities.push(Entity::Exit(Exit::new(x, y))); },
                 b'~' => { entities.push(Entity::Water(Water::new(x, y))); },
                 b'\n' => {

@@ -30,7 +30,8 @@ pub enum GameAction {
     Stop,
     Walk,
     Push(usize),
-    ColorChange(Color),
+    ColorRadio(Color),
+    ColorToggle(Color),
     Win,
     Sink(usize, usize, Color),
 }
@@ -39,7 +40,8 @@ pub enum HistoryEventType {
     Walk,
     Push,
     Sink(Color),
-    ColorChange(Color),
+    ColorRadio(Color),
+    ColorToggle(Color),
     Win,
 }
 
@@ -86,11 +88,11 @@ impl Scene {
             camera_mode,
             ambient_color,
         };
-        this.set_light_color(starting_color);
+        this.radio_set_light_color(starting_color);
         this
     }
 
-    pub fn set_light_color(&mut self, color: Color) {
+    pub fn radio_set_light_color(&mut self, color: Color) {
         if self.light_color == color { return; }
         for entity in self.entities.iter_mut() {
             if let Entity::Lightbulb(bulb) = entity {
@@ -99,6 +101,15 @@ impl Scene {
             }
         }
         self.light_color = color;
+    }
+
+    pub fn toggle_light_color(&mut self, color: Color) {
+        self.light_color ^= color;
+        for entity in self.entities.iter_mut() {
+            if let Entity::Lightbulb(bulb) = entity {
+                if color == bulb.color { bulb.toggle(); }
+            }
+        }
     }
 
     // TODO: if the level's too small probably center it instead
@@ -246,9 +257,13 @@ impl Scene {
                 self.entities.push(Entity::Block(Block::new(px, py, color)));
                 self.entities.push(Entity::Water(Water::new(bx, by)));
             },
-            HistoryEventType::ColorChange(color) => {
+            HistoryEventType::ColorRadio(color) => {
                 // TODO: too gentle! hard switch!
-                self.set_light_color(color);
+                self.radio_set_light_color(color);
+            },
+            HistoryEventType::ColorToggle(color) => {
+                // TODO: too gentle! hard switch!
+                self.toggle_light_color(color);
             },
             HistoryEventType::Win => (),
         }
@@ -277,14 +292,21 @@ impl Scene {
                     direction: direction.reverse(),
                     event_type: HistoryEventType::Walk,
                 }
-            },
-            GameAction::ColorChange(color) => {
+            }
+            GameAction::ColorRadio(color) => {
                 let evt = HistoryEvent {
                     direction: direction.reverse(),
-                    event_type: HistoryEventType::ColorChange(self.light_color.clone()),
+                    event_type: HistoryEventType::ColorRadio(self.light_color),
                 };
-                self.set_light_color(color);
+                self.radio_set_light_color(color);
                 evt
+            }
+            GameAction::ColorToggle(color) => {
+                self.toggle_light_color(color);
+                HistoryEvent {
+                    direction: direction.reverse(),
+                    event_type: HistoryEventType::ColorToggle(color),
+                }
             }
             GameAction::Win => {
                 HistoryEvent {

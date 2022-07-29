@@ -184,7 +184,7 @@ impl TitleView {
             2 => { Color::RED },
             _ => unreachable!(),
         };
-        self.scene.set_light_color(color);
+        self.scene.radio_set_light_color(color);
     }
 
     fn fade_out(&mut self, transition: Transition) {
