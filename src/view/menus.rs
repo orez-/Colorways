@@ -11,17 +11,20 @@ use piston_window::rectangle::rectangle_by_corners;
 const DISPLAY_WIDTH: f64 = 200.;
 const DISPLAY_HEIGHT: f64 = 200.;
 const LEVEL_PADDING: f64 = 8.;
-const LEVELS_HORIZONTAL: usize = 4;
-const LEVELS_VERTICAL: usize = 2;
+const LEVELS_HORIZONTAL: usize = 5;
+const LEVELS_VERTICAL: usize = 3;
 const LEVEL_WIDTH: f64 = 30.;
 const LEVEL_HEIGHT: f64 = 25.;
-const LEVEL_OFFSET_X: f64 = 29.;
-const LEVEL_OFFSET_Y: f64 = 9.;
 const LEVEL_SPACING_X: f64 = LEVEL_WIDTH + LEVEL_PADDING;
 const LEVEL_SPACING_Y: f64 = LEVEL_HEIGHT + LEVEL_PADDING;
+// TODO: try to guarantee this is a whole number.
+const LEVEL_OFFSET_X: f64 = (DISPLAY_WIDTH - (LEVEL_SPACING_X * LEVELS_HORIZONTAL as f64) + LEVEL_PADDING) / 2.;
+const LEVEL_OFFSET_Y: f64 = 9.;
+const CURSOR_OFFSET_X: f64 = LEVEL_OFFSET_X + 6.;
+const CURSOR_OFFSET_Y: f64 = LEVEL_OFFSET_Y + 6.;
 const INSTRUCTION: Decal = Decal {
     src_left: 192., src_top: 112.,
-    dest_left: 68., dest_top: 100.,
+    dest_left: 68., dest_top: 130.,
     width: 64., height: 48.,
 };
 const STAR: Decal = Decal {
@@ -64,7 +67,7 @@ impl MenuView {
 
     pub fn render_scene(&self, gl: &mut GlGraphics) {
         let context = Context::new_abs(DISPLAY_WIDTH, DISPLAY_HEIGHT);
-        let cursor_context = context.trans(35., 15.);
+        let cursor_context = context.trans(CURSOR_OFFSET_X, CURSOR_OFFSET_Y);
         let color = Rectangle::new([0.7, 0.7, 0.7, 1.]);
 
         let draw_state = if let Some(fade) = &self.fade {
