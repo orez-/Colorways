@@ -30,7 +30,8 @@ impl IEntity for LightRadio {
             .rect([x, y, TILE_SIZE, TILE_SIZE])
     }
 
-    fn on_approach(&self, _entity_id: usize, _direction: Direction, _game: &HeadlessScene) -> GameAction {
+    fn on_approach(&self, _entity_id: usize, _direction: Direction, scene: &HeadlessScene) -> GameAction {
+        if scene.tile_in_light(self.x, self.y, self.color) { return GameAction::Walk; }
         GameAction::ColorRadio(self.color)
     }
 }
