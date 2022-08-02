@@ -92,7 +92,7 @@ impl App {
     }
 }
 
-#[derive(PartialEq, Clone, Copy)]
+#[derive(Debug, PartialEq, Clone, Copy)]
 pub enum Direction {
     North,
     East,

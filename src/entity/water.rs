@@ -2,15 +2,15 @@ use piston_window::Image;
 use crate::app::Direction;
 use crate::color::Color;
 use crate::entity::IEntity;
-use crate::scene::{Scene, GameAction};
+use crate::scene::{HeadlessScene, GameAction};
 
 const TILE_SIZE: f64 = 16.;
 const WATER: [f64; 4] = [32., 64., TILE_SIZE, TILE_SIZE];
-const SPLASH: [f64; 4] = [48., 176., TILE_SIZE, TILE_SIZE];
+// const SPLASH: [f64; 4] = [48., 176., TILE_SIZE, TILE_SIZE];
 
 enum State {
     Idle,
-    Sinking(f64),
+    // Sinking(f64),
 }
 
 pub struct Water {
@@ -31,14 +31,14 @@ impl IEntity for Water {
         let y = self.y as f64 * TILE_SIZE;
         let src = match self.state {
             State::Idle => WATER,
-            State::Sinking(_) => SPLASH,
+            // State::Sinking(_) => SPLASH,
         };
         Image::new()
             .src_rect(src)
             .rect([x, y, TILE_SIZE, TILE_SIZE])
     }
 
-    fn on_approach(&self, _entity_id: usize, _direction: Direction, scene: &Scene) -> GameAction {
+    fn on_approach(&self, _entity_id: usize, _direction: Direction, scene: &HeadlessScene) -> GameAction {
         if scene.tile_in_light(self.x, self.y, Color::BLUE) { return GameAction::Walk; }
         GameAction::Stop
     }

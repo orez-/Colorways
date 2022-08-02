@@ -2,7 +2,7 @@ use piston_window::Image;
 use crate::app::Direction;
 use crate::color::Color;
 use crate::entity::IEntity;
-use crate::scene::{Scene, GameAction};
+use crate::scene::{HeadlessScene, GameAction};
 
 const TILE_SIZE: f64 = 16.;
 const LIGHTSWITCH: [f64; 4] = [0., 48., TILE_SIZE, TILE_SIZE];
@@ -28,7 +28,8 @@ impl IEntity for LightToggle {
             .rect([x, y, TILE_SIZE, TILE_SIZE])
     }
 
-    fn on_approach(&self, _entity_id: usize, _direction: Direction, _game: &Scene) -> GameAction {
+    fn on_approach(&self, _entity_id: usize, _direction: Direction, scene: &HeadlessScene) -> GameAction {
+        if scene.tile_in_light(self.x, self.y, self.color) { return GameAction::Walk; }
         GameAction::ColorToggle(self.color)
     }
 }

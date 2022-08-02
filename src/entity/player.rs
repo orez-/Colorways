@@ -156,4 +156,9 @@ impl Player {
             _ => (),
         }
     }
+
+    #[cfg(test)]
+    pub fn resolve(&mut self) {
+        self.state = State::Idle;
+    }
 }

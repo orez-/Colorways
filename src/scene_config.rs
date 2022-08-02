@@ -2,12 +2,12 @@ use crate::color::Color;
 use crate::entity::{Block, Entity, Exit, Lightbulb, LightRadio, LightToggle, Player, Water};
 use crate::line_of_sight::{line_of_sight, Visibility};
 use crate::room::{Room, Tile};
-use crate::scene::SceneTag;
+use crate::scene::{HeadlessScene, SceneTag};
 use geo::polygon;
 
 const AMBIENT_DEFAULT: [f32; 4] = [0.6, 0.6, 0.6, 1.0];
 const ONE_START_MSG: &str = "level must have exactly one starting position";
-pub const NUM_LEVELS: usize = 8;
+pub const NUM_LEVELS: usize = 9;
 const LEVELS: [&[u8]; NUM_LEVELS] = [
     include_bytes!("../bin/levels/level01.skb"),
     include_bytes!("../bin/levels/level02.skb"),
@@ -17,6 +17,7 @@ const LEVELS: [&[u8]; NUM_LEVELS] = [
     include_bytes!("../bin/levels/level06.skb"),
     include_bytes!("../bin/levels/level07.skb"),
     include_bytes!("../bin/levels/level08.skb"),
+    include_bytes!("../bin/levels/level09.skb"),
 ];
 const TITLE_LEVEL: &[u8] = include_bytes!("../bin/levels/title.skb");
 const TILE_SIZE: f64 = 16.;
@@ -38,10 +39,7 @@ fn take<'a, T>(slice: &mut &'a [T], range: std::ops::RangeTo<usize>) -> Option<&
 }
 
 pub struct SceneConfig {
-    pub room: Room,
-    pub player: Player,
-    pub entities: Vec<Entity>,
-    pub starting_color: Color,
+    pub state: HeadlessScene,
     pub ambient_color: [f32; 4],
     pub tag: Option<SceneTag>,
 }
@@ -140,10 +138,12 @@ impl SceneConfig {
         }
 
         SceneConfig {
-            room: Room { width, height, tiles, sees_color },
-            player: player.expect(ONE_START_MSG),
-            entities,
-            starting_color,
+            state: HeadlessScene::new(
+                player.expect(ONE_START_MSG),
+                Room { width, height, tiles, sees_color },
+                entities,
+                starting_color,
+            ),
             ambient_color: AMBIENT_DEFAULT,
             tag,
         }

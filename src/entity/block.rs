@@ -2,7 +2,7 @@ use piston_window::{Image, UpdateArgs};
 use crate::app::Direction;
 use crate::color::Color;
 use crate::entity::{Entity, IEntity};
-use crate::scene::{Scene, GameAction};
+use crate::scene::{HeadlessScene, GameAction};
 
 const TILE_SIZE: f64 = 16.;
 const BLOCK_WIDTH: f64 = TILE_SIZE;
@@ -14,7 +14,7 @@ const PUSH_SPEED: f64 = 5.;
 enum State {
     Idle,
     Slide(f64),
-    SlideSink(f64),
+    // SlideSink(f64),
 }
 use State::*;
 
@@ -79,19 +79,19 @@ impl IEntity for Block {
                 self.state = if new_p >= 1. { State::Idle }
                     else { State::Slide(new_p) };
             },
-            State::SlideSink(p) => {
-                let new_p = p + args.dt * PUSH_SPEED;
-                if new_p >= 1. {
-                    self.dead = true;
-                    return;
-                }
-                self.state = State::SlideSink(new_p);
-            },
+            // State::SlideSink(p) => {
+            //     let new_p = p + args.dt * PUSH_SPEED;
+            //     if new_p >= 1. {
+            //         self.dead = true;
+            //         return;
+            //     }
+            //     self.state = State::SlideSink(new_p);
+            // },
             _ => ()
         }
     }
 
-    fn on_approach(&self, entity_id: usize, direction: Direction, scene: &Scene) -> GameAction {
+    fn on_approach(&self, entity_id: usize, direction: Direction, scene: &HeadlessScene) -> GameAction {
         if scene.tile_in_light(self.x, self.y, self.color) { return GameAction::Walk; }
         let (nx, ny) = direction.from(self.x, self.y);
         if !scene.tile_is_passable(nx, ny) { return GameAction::Stop; }

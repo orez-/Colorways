@@ -59,7 +59,7 @@ impl GameView {
         let scene_config = SceneConfig::new(level_id);
         let camera_mode = CameraMode::Player;
         let scene = Scene::new(scene_config, camera_mode);
-        let (cx, cy) = scene.player.center();
+        let (cx, cy) = scene.player().center();
         GameView {
             texture: crate::app::load_texture(),
             scene,
@@ -108,7 +108,7 @@ impl GameView {
         self.scene.render_lights(draw_state, gl);
 
         // Thoughts
-        let (px, py) = self.scene.player.pixel_coord();
+        let (px, py) = self.scene.player().pixel_coord();
         self.thought.render(
             &self.texture,
             draw_state,
@@ -233,7 +233,7 @@ impl GameView {
     }
 
     fn fade_out(&mut self, transition: Transition) {
-        let (x, y) = self.cursor.as_ref().unwrap_or(&self.scene.player).center();
+        let (x, y) = self.cursor.as_ref().unwrap_or(&self.scene.player()).center();
         self.fade = Some(CircleWipe::new_in(x as f64, y as f64));
         self.staged_transition = Some(transition);
     }

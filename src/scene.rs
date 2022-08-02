@@ -36,6 +36,7 @@ pub enum GameAction {
     Sink(usize, usize, Color),
 }
 
+#[derive(Debug)]
 pub enum HistoryEventType {
     Walk,
     Push,
@@ -45,6 +46,7 @@ pub enum HistoryEventType {
     Win,
 }
 
+#[derive(Debug)]
 pub struct HistoryEvent {
     pub direction: Direction,
     pub event_type: HistoryEventType,
@@ -55,41 +57,33 @@ pub enum SceneTag {
     TeachUndo,
 }
 
-pub struct Scene {
-    texture: GlTexture,
-    light_buffer: FrameBuffer,
-    pub tag: Option<SceneTag>,
-    pub player: Player,
+pub struct HeadlessScene {
+    player: Player,
     room: Room,
     entities: Vec<Entity>,
     light_color: Color,
-    camera_mode: CameraMode,
-    ambient_color: [f32; 4],
 }
 
-impl Scene {
-    pub fn new(config: SceneConfig, camera_mode: CameraMode) -> Self {
-        let SceneConfig {room, player, entities, starting_color, ambient_color, tag } = config;
-        let mut texture_settings = opengl_graphics::TextureSettings::new();
-        texture_settings.set_mag(opengl_graphics::Filter::Nearest);
-
-        let canvas = image::ImageBuffer::new(800, 800);
-        let texture = GlTexture::from_image(&canvas, &texture_settings);
-        let light_buffer = FrameBuffer::new(texture);
-
-        let mut this = Self {
-            texture: crate::app::load_texture(),
-            light_buffer,
-            tag,
+impl HeadlessScene {
+    pub fn new(player: Player, room: Room, entities: Vec<Entity>, starting_color: Color) -> Self {
+        let mut this = HeadlessScene {
             player,
             room,
             entities,
             light_color: Color::GRAY,
-            camera_mode,
-            ambient_color,
         };
         this.radio_set_light_color(starting_color);
         this
+    }
+
+    /// Flush queued commands.
+    /// Actions against the HeadlessScene and its actors may enqueue some
+    /// animation or otherwise act with some delay. Since this is undesirable
+    /// for puzzle behavior testing, this function will flush any such state
+    /// and leave the scene ready to receive the next input.
+    #[cfg(test)]
+    pub fn resolve(&mut self) {
+        self.player.resolve();
     }
 
     pub fn radio_set_light_color(&mut self, color: Color) {
@@ -109,106 +103,6 @@ impl Scene {
             if let Entity::Lightbulb(bulb) = entity {
                 if color == bulb.color { bulb.toggle(); }
             }
-        }
-    }
-
-    // TODO: if the level's too small probably center it instead
-    fn camera(&self) -> (i64, i64) {
-        let (x, y) = match self.camera_mode {
-            CameraMode::Player => self.player.center(),
-            CameraMode::Fixed(x, y) => (x, y),
-        };
-        (
-            x.clamp(DISPLAY_WIDTH_HALF, self.room.pixel_width() - DISPLAY_WIDTH_HALF),
-            y.clamp(DISPLAY_HEIGHT_HALF, self.room.pixel_height() - DISPLAY_HEIGHT_HALF),
-        )
-    }
-
-    fn absolute_context(&self) -> Context {
-        Context::new_abs(DISPLAY_WIDTH, DISPLAY_HEIGHT)
-    }
-
-    pub fn camera_context(&self) -> Context {
-        let (x, y) = self.camera();
-        let x = x as f64;
-        let y = y as f64;
-        self.absolute_context()
-            .trans(-x + DISPLAY_WIDTH / 2., -y + DISPLAY_HEIGHT / 2.)
-    }
-
-    fn camera_context2(&self) -> Context {
-        let (x, y) = self.camera();
-        let x = x as f64;
-        let y = y as f64;
-        Context::new_abs(800., 800.)
-            .zoom(4.)
-            .trans(-x + DISPLAY_WIDTH / 2., -y + DISPLAY_HEIGHT / 2.)
-    }
-
-    pub fn prerender_lights(&mut self, args: &RenderArgs, gl: &mut GlGraphics) {
-        let context = self.camera_context2();
-        let draw_state = DrawState::default();
-
-        self.light_buffer.draw(args.viewport(), gl, |_, gl| {
-            piston_window::clear(self.ambient_color, gl);
-            let lights: Vec<_> = self.entities.iter().filter_map(|e| {
-                if let Entity::Lightbulb(bulb) = e { Some(bulb) }
-                else { None }
-            }).collect();
-
-            // Pre-paint a darker color over the areas we'll be painting lights.
-            // This allows us to keep the lights primarily the color they're displaying,
-            // while letting us independently set an ambient light for the scene.
-            for light in &lights {
-                light.draw_light_base(self.ambient_color, &draw_state, &context, gl);
-            }
-
-            for light in lights {
-                light.draw_light(&draw_state, &context, gl);
-            }
-        });
-    }
-
-    pub fn render_stuff(&self, draw_state: &DrawState, gl: &mut GlGraphics) {
-        let context = self.camera_context();
-
-        self.room.render(
-            &self.texture,
-            draw_state,
-            &context,
-            gl,
-        );
-
-        for entity in &self.entities {
-            entity.sprite().draw(
-                &self.texture,
-                draw_state,
-                context.transform,
-                gl,
-            );
-        }
-
-        self.player.sprite().draw(
-            &self.texture,
-            draw_state,
-            context.transform,
-            gl,
-        );
-    }
-
-    pub fn render_lights(&self, draw_state: &DrawState, gl: &mut GlGraphics) {
-        Image::new().draw(
-            self.light_buffer.texture(),
-            &draw_state.blend(Blend::Multiply),
-            Context::new_abs(800., 800.).flip_v().trans(0., -800.).transform,
-            gl,
-        );
-    }
-
-    pub fn update(&mut self, args: &UpdateArgs) {
-        self.player.update(args);
-        for entity in self.entities.iter_mut() {
-            entity.update(args);
         }
     }
 
@@ -340,5 +234,184 @@ impl Scene {
             GameAction::Stop => unreachable!(),
         };
         Some(evt)
+    }
+}
+
+pub struct Scene {
+    texture: GlTexture,
+    light_buffer: FrameBuffer,
+    pub tag: Option<SceneTag>,
+    state: HeadlessScene,
+    camera_mode: CameraMode,
+    ambient_color: [f32; 4],
+}
+
+impl Scene {
+    pub fn new(config: SceneConfig, camera_mode: CameraMode) -> Self {
+        let SceneConfig {state, ambient_color, tag } = config;
+
+        let mut texture_settings = opengl_graphics::TextureSettings::new();
+        texture_settings.set_mag(opengl_graphics::Filter::Nearest);
+
+        let canvas = image::ImageBuffer::new(800, 800);
+        let texture = GlTexture::from_image(&canvas, &texture_settings);
+        let light_buffer = FrameBuffer::new(texture);
+
+        Self {
+            texture: crate::app::load_texture(),
+            light_buffer,
+            tag,
+            state,
+            camera_mode,
+            ambient_color,
+        }
+    }
+
+    // TODO: if the level's too small probably center it instead
+    fn camera(&self) -> (i64, i64) {
+        let (x, y) = match self.camera_mode {
+            CameraMode::Player => self.state.player.center(),
+            CameraMode::Fixed(x, y) => (x, y),
+        };
+        (
+            x.clamp(DISPLAY_WIDTH_HALF, self.state.room.pixel_width() - DISPLAY_WIDTH_HALF),
+            y.clamp(DISPLAY_HEIGHT_HALF, self.state.room.pixel_height() - DISPLAY_HEIGHT_HALF),
+        )
+    }
+
+    fn absolute_context(&self) -> Context {
+        Context::new_abs(DISPLAY_WIDTH, DISPLAY_HEIGHT)
+    }
+
+    pub fn camera_context(&self) -> Context {
+        let (x, y) = self.camera();
+        let x = x as f64;
+        let y = y as f64;
+        self.absolute_context()
+            .trans(-x + DISPLAY_WIDTH / 2., -y + DISPLAY_HEIGHT / 2.)
+    }
+
+    fn camera_context2(&self) -> Context {
+        let (x, y) = self.camera();
+        let x = x as f64;
+        let y = y as f64;
+        Context::new_abs(800., 800.)
+            .zoom(4.)
+            .trans(-x + DISPLAY_WIDTH / 2., -y + DISPLAY_HEIGHT / 2.)
+    }
+
+    pub fn prerender_lights(&mut self, args: &RenderArgs, gl: &mut GlGraphics) {
+        let context = self.camera_context2();
+        let draw_state = DrawState::default();
+
+        self.light_buffer.draw(args.viewport(), gl, |_, gl| {
+            piston_window::clear(self.ambient_color, gl);
+            let lights: Vec<_> = self.state.entities.iter().filter_map(|e| {
+                if let Entity::Lightbulb(bulb) = e { Some(bulb) }
+                else { None }
+            }).collect();
+
+            // Pre-paint a darker color over the areas we'll be painting lights.
+            // This allows us to keep the lights primarily the color they're displaying,
+            // while letting us independently set an ambient light for the scene.
+            for light in &lights {
+                light.draw_light_base(self.ambient_color, &draw_state, &context, gl);
+            }
+
+            for light in lights {
+                light.draw_light(&draw_state, &context, gl);
+            }
+        });
+    }
+
+    pub fn render_stuff(&self, draw_state: &DrawState, gl: &mut GlGraphics) {
+        let context = self.camera_context();
+
+        self.state.room.render(
+            &self.texture,
+            draw_state,
+            &context,
+            gl,
+        );
+
+        for entity in &self.state.entities {
+            entity.sprite().draw(
+                &self.texture,
+                draw_state,
+                context.transform,
+                gl,
+            );
+        }
+
+        self.state.player.sprite().draw(
+            &self.texture,
+            draw_state,
+            context.transform,
+            gl,
+        );
+    }
+
+    pub fn render_lights(&self, draw_state: &DrawState, gl: &mut GlGraphics) {
+        Image::new().draw(
+            self.light_buffer.texture(),
+            &draw_state.blend(Blend::Multiply),
+            Context::new_abs(800., 800.).flip_v().trans(0., -800.).transform,
+            gl,
+        );
+    }
+
+    pub fn update(&mut self, args: &UpdateArgs) {
+        self.state.player.update(args);
+        for entity in self.state.entities.iter_mut() {
+            entity.update(args);
+        }
+    }
+
+    // proxied methods
+    pub fn player(&self) -> &Player {
+        &self.state.player
+    }
+
+    pub fn undo(&mut self, event: HistoryEvent) {
+        self.state.undo(event);
+    }
+
+    pub fn navigate(&mut self, direction: Direction) -> Option<HistoryEvent> {
+        self.state.navigate(direction)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_push() {
+        let lvl = include_bytes!("../bin/levels/tests/test_push.skb");
+        let SceneConfig { mut state, .. } = SceneConfig::from_file(lvl);
+
+        {
+            let evt = state.navigate(Direction::East);
+            state.resolve();
+            assert!(matches!(evt, Some(HistoryEvent {
+                event_type: HistoryEventType::Push,
+                direction: Direction::West,
+            })), "{evt:?}");
+        }
+
+        {
+            let evt = state.navigate(Direction::East);
+            state.resolve();
+            assert!(matches!(evt, Some(HistoryEvent {
+                event_type: HistoryEventType::Push,
+                direction: Direction::West,
+            })), "{evt:?}");
+        }
+
+        {
+            let evt = state.navigate(Direction::East);
+            state.resolve();
+            assert!(matches!(evt, None), "{evt:?}");
+        }
     }
 }

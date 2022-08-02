@@ -3,9 +3,7 @@ use opengl_graphics::Texture as GlTexture;
 use piston_window::{Context, DrawState, RenderArgs, Transformed, UpdateArgs};
 use crate::app::{Direction, HeldKeys, Input};
 use crate::circle_wipe::CircleWipe;
-use crate::color::Color;
 use crate::decal::Decal;
-use crate::entity::Player;
 use crate::scene::{Scene, CameraMode};
 use crate::scene_config::SceneConfig;
 use crate::view::Transition;
@@ -59,7 +57,6 @@ enum State {
 pub struct TitleView {
     texture: GlTexture,
     scene: Scene,
-    cursor: Player,
     state: State,
     fade: Option<CircleWipe>,
     staged_transition: Option<Transition>,
@@ -73,7 +70,6 @@ impl TitleView {
         Self {
             texture: crate::app::load_texture(),
             scene: Scene::new(game, camera_mode),
-            cursor: Player::new_cursor(0, 0, 16., 16.),
             state: State::InputCheck,
             fade: None,
             staged_transition: None,
@@ -92,10 +88,9 @@ impl TitleView {
     pub fn render_scene(&self, gl: &mut GlGraphics) {
         let context = Context::new_abs(DISPLAY_WIDTH, DISPLAY_HEIGHT);
         let room_context = context.trans(-ROOM_OFFSET_X, -ROOM_OFFSET_Y);
-        let cursor_context = room_context.trans(80., 112.);
 
         let draw_state = if let Some(fade) = &self.fade {
-            fade.render(&cursor_context, gl);
+            fade.render(&room_context, gl);
             DrawState::new_inside()
         }
         else { DrawState::default() };
@@ -121,12 +116,6 @@ impl TitleView {
                 draw_decal(LEVELS);
                 draw_decal(CREDITS);
                 draw_decal(AUTHOR);
-                self.cursor.sprite().draw(
-                    &self.texture,
-                    &draw_state,
-                    cursor_context.transform,
-                    gl,
-                );
             },
         }
         self.scene.render_lights(&draw_state, gl);
@@ -145,7 +134,7 @@ impl TitleView {
         }
         match &self.state {
             State::InputCheck => { self.update_input_check(args, held_keys); },
-            State::Menu => { self.update_menu(args, held_keys); },
+            State::Menu => { self.update_menu(held_keys); },
         }
         None
     }
@@ -154,41 +143,31 @@ impl TitleView {
         for input in held_keys.inputs() {
             if matches!(input, Input::Accept) {
                 self.state = State::Menu;
+                // Walk west, but immediately face east
+                self.scene.navigate(Direction::West);
+                self.scene.navigate(Direction::East);
             }
         }
     }
 
-    fn update_menu(&mut self, args: &UpdateArgs, held_keys: &mut HeldKeys) {
-        self.cursor.update(args);
+    fn update_menu(&mut self, held_keys: &mut HeldKeys) {
         for input in held_keys.inputs() {
             match input {
-                Input::Navigate(direction @ Direction::North)
-                if self.cursor.y != 0 && self.cursor.can_walk() => {
-                    self.cursor.walk(direction);
-                },
-                Input::Navigate(direction @ Direction::South)
-                if self.cursor.y != 2 && self.cursor.can_walk() => {
-                    self.cursor.walk(direction);
-                },
-                Input::Accept => match self.cursor.y {
-                    0 => { self.fade_out(Transition::Game(0)); },
-                    1 => { self.fade_out(Transition::Menu(0)); },
+                Input::Navigate(direction @ (Direction::North | Direction::South)) => {
+                    self.scene.navigate(direction);
+                }
+                Input::Accept => match self.scene.player().y {
+                    7 => { self.fade_out(Transition::Game(0)); },
+                    8 => { self.fade_out(Transition::Menu(0)); },
                     _ => (),
-                },
+                }
                 _ => ()
             }
         }
-        let color = match self.cursor.y {
-            0 => { Color::BLUE },
-            1 => { Color::GREEN },
-            2 => { Color::RED },
-            _ => unreachable!(),
-        };
-        self.scene.radio_set_light_color(color);
     }
 
     fn fade_out(&mut self, transition: Transition) {
-        let (x, y) = self.cursor.center();
+        let (x, y) = self.scene.player().center();
         self.fade = Some(CircleWipe::new_in(x as f64, y as f64));
         self.staged_transition = Some(transition);
     }

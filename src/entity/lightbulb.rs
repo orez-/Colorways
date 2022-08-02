@@ -4,7 +4,7 @@ use piston_window::draw_state::Blend;
 use crate::app::{Direction, lerpn};
 use crate::color::Color;
 use crate::entity::IEntity;
-use crate::scene::{Scene, GameAction};
+use crate::scene::{HeadlessScene, GameAction};
 
 type Rect = [f64; 4];
 type GlColor = [f32; 4];
@@ -139,7 +139,7 @@ impl IEntity for Lightbulb {
         }
     }
 
-    fn on_approach(&self, _entity_id: usize, _direction: Direction, _game: &Scene) -> GameAction {
+    fn on_approach(&self, _entity_id: usize, _direction: Direction, _game: &HeadlessScene) -> GameAction {
         GameAction::Stop
     }
 }

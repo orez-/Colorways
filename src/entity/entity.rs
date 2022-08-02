@@ -1,13 +1,13 @@
 use piston_window::{Image, UpdateArgs};
 use crate::app::Direction;
-use crate::scene::{Scene, GameAction};
+use crate::scene::{HeadlessScene, GameAction};
 use crate::entity;
 
 // The boilerplatenest file. Try to stay out of here as much as possible.
 pub trait IEntity {
     fn sprite(&self) -> Image;
     fn update(&mut self, _args: &UpdateArgs) { }
-    fn on_approach(&self, entity_id: usize, direction: Direction, scene: &Scene) -> GameAction;
+    fn on_approach(&self, entity_id: usize, direction: Direction, scene: &HeadlessScene) -> GameAction;
     fn is_dead(&self) -> bool { false }
 }
 
@@ -68,7 +68,7 @@ impl IEntity for Entity {
         }
     }
 
-    fn on_approach(&self, entity_id: usize, direction: Direction, scene: &Scene) -> GameAction {
+    fn on_approach(&self, entity_id: usize, direction: Direction, scene: &HeadlessScene) -> GameAction {
         match self {
             Block(e) => e.on_approach(entity_id, direction, scene),
             Exit(e) => e.on_approach(entity_id, direction, scene),
