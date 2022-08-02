@@ -1,6 +1,9 @@
 # Colorways Level File Format
 
-The first line of the file contains the a character representing the initial light color of the level (see below), optionally followed by a "scene tag" character for special-case rendering.
+The first line of the file contains some global data about the level.
+- The first character represents the initial light color of the level (see below).
+- The next two characters are the x and y camera styles: `p` for player follow, `+` for centered.
+- The last (optional) character denotes a "scene tag", for special-case rendering.
 
 The remaining lines describe the level, laid out in a grid, where each character is a tile.
 The meaning of each character is detailed below.

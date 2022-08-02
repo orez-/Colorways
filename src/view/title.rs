@@ -4,7 +4,7 @@ use piston_window::{Context, DrawState, RenderArgs, Transformed, UpdateArgs};
 use crate::app::{Direction, HeldKeys, Input};
 use crate::circle_wipe::CircleWipe;
 use crate::decal::Decal;
-use crate::scene::{Scene, CameraMode};
+use crate::scene::{Scene, Camera};
 use crate::scene_config::SceneConfig;
 use crate::view::Transition;
 
@@ -64,12 +64,12 @@ pub struct TitleView {
 
 impl TitleView {
     pub fn new() -> Self {
-        let game = SceneConfig::new_title();
-        let camera_mode = CameraMode::offset(ROOM_OFFSET_X as i64, ROOM_OFFSET_Y as i64);
+        let mut game = SceneConfig::new_title();
+        game.camera = Camera::offset(ROOM_OFFSET_X as i64, ROOM_OFFSET_Y as i64);
 
         Self {
             texture: crate::app::load_texture(),
-            scene: Scene::new(game, camera_mode),
+            scene: Scene::new(game),
             state: State::InputCheck,
             fade: None,
             staged_transition: None,

@@ -4,7 +4,7 @@ use crate::app::{int_lerp4, Direction, HeldKeys, Input};
 use crate::decal::Decal;
 use crate::circle_wipe::CircleWipe;
 use crate::entity::Player;
-use crate::scene::{Scene, SceneTag, CameraMode, HistoryEvent, HistoryEventType};
+use crate::scene::{Scene, SceneTag, HistoryEvent, HistoryEventType};
 use crate::scene_config::SceneConfig;
 use crate::view::game::thought::Thought;
 use crate::view::Transition;
@@ -57,8 +57,7 @@ pub struct GameView {
 impl GameView {
     pub fn new(level_id: usize) -> Self {
         let scene_config = SceneConfig::new(level_id);
-        let camera_mode = CameraMode::Player;
-        let scene = Scene::new(scene_config, camera_mode);
+        let scene = Scene::new(scene_config);
         let (cx, cy) = scene.player().center();
         GameView {
             texture: crate::app::load_texture(),

@@ -2,7 +2,7 @@ use crate::color::Color;
 use crate::entity::{Block, Entity, Exit, Lightbulb, LightRadio, LightToggle, Player, Water};
 use crate::line_of_sight::{line_of_sight, Visibility};
 use crate::room::{Room, Tile};
-use crate::scene::{HeadlessScene, SceneTag};
+use crate::scene::{Camera, CameraMode, HeadlessScene, SceneTag};
 use geo::polygon;
 
 const AMBIENT_DEFAULT: [f32; 4] = [0.6, 0.6, 0.6, 1.0];
@@ -42,6 +42,7 @@ pub struct SceneConfig {
     pub state: HeadlessScene,
     pub ambient_color: [f32; 4],
     pub tag: Option<SceneTag>,
+    pub camera: Camera,
 }
 
 impl SceneConfig {
@@ -62,7 +63,18 @@ impl SceneConfig {
             b'B' => Color::BLUE,
             _ => Color::GRAY,
         };
-        let tag = match bytes[1] {
+        let x_mode = match bytes[1] {
+            b'p' => CameraMode::Player,
+            b'+' => CameraMode::Centered,
+            t => { panic!("Unrecognized camera mode {:?}", t as char); }
+        };
+        let y_mode = match bytes[2] {
+            b'p' => CameraMode::Player,
+            b'+' => CameraMode::Centered,
+            t => { panic!("Unrecognized camera mode {:?}", t as char); }
+        };
+        let camera = Camera { x_mode, y_mode };
+        let tag = match bytes[3] {
             b'm' => Some(SceneTag::TeachMove),
             b'u' => Some(SceneTag::TeachUndo),
             b'\n' => None,
@@ -83,7 +95,7 @@ impl SceneConfig {
         let height = tiles.len() / width;
 
         let walls_polygon = to_walls_polygon(&tiles, width);
-        let mut sees_color = vec![[false, false, false]; tiles.len()];
+        let mut sees_color = vec![Color::GRAY; tiles.len()];
 
         let mut x = 0;
         let mut y = 0;
@@ -106,21 +118,21 @@ impl SceneConfig {
                 b'R' => {
                     let Visibility { polygon_pts, tiles } = line_of_sight(x, y, width, height, &walls_polygon);
                     for idx in tiles {
-                        sees_color[idx][0] = true;
+                        sees_color[idx] |= Color::RED;
                     }
                     entities.push(Entity::Lightbulb(Lightbulb::new(x, y, Color::RED, polygon_pts)));
                 }
                 b'G' => {
                     let Visibility { polygon_pts, tiles } = line_of_sight(x, y, width, height, &walls_polygon);
                     for idx in tiles {
-                        sees_color[idx][1] = true;
+                        sees_color[idx] |= Color::GREEN;
                     }
                     entities.push(Entity::Lightbulb(Lightbulb::new(x, y, Color::GREEN, polygon_pts)));
                 }
                 b'B' => {
                     let Visibility { polygon_pts, tiles } = line_of_sight(x, y, width, height, &walls_polygon);
                     for idx in tiles {
-                        sees_color[idx][2] = true;
+                        sees_color[idx] |= Color::BLUE;
                     }
                     entities.push(Entity::Lightbulb(Lightbulb::new(x, y, Color::BLUE, polygon_pts)));
                 }
@@ -146,6 +158,7 @@ impl SceneConfig {
             ),
             ambient_color: AMBIENT_DEFAULT,
             tag,
+            camera,
         }
     }
 

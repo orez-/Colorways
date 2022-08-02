@@ -14,15 +14,24 @@ const DISPLAY_HEIGHT: f64 = 200.;
 const DISPLAY_WIDTH_HALF: i64 = DISPLAY_WIDTH as i64 / 2;
 const DISPLAY_HEIGHT_HALF: i64 = DISPLAY_HEIGHT as i64 / 2;
 
-pub enum CameraMode {
-    Player,
-    Fixed(i64, i64),
+pub struct Camera {
+    pub x_mode: CameraMode,
+    pub y_mode: CameraMode,
 }
 
-impl CameraMode {
+impl Camera {
     pub fn offset(x: i64, y: i64) -> Self {
-        Self::Fixed(x + DISPLAY_WIDTH_HALF, y + DISPLAY_HEIGHT_HALF)
+        Self {
+            x_mode: CameraMode::Fixed(x + DISPLAY_WIDTH_HALF),
+            y_mode: CameraMode::Fixed(y + DISPLAY_HEIGHT_HALF),
+        }
     }
+}
+
+pub enum CameraMode {
+    Player,
+    Fixed(i64),
+    Centered,
 }
 
 #[derive(Debug)]
@@ -126,12 +135,14 @@ impl HeadlessScene {
     }
 
     pub fn tile_in_light(&self, x: i32, y: i32, tile_color: Color) -> bool {
-        // println!("light: {:?}; tile: {:?}", self.light_color, tile_color);
-        if self.light_color == Color::GRAY { return false; }
-        if tile_color == Color::WHITE { return true; }
-        // println!("contains? {:?}", tile_color.contains(self.light_color));
-        tile_color.contains(self.light_color)
-            && self.room.tile_in_light(x, y, self.light_color)
+        if matches!(tile_color, Color::WHITE) {
+            return true;
+        }
+        let light_color = self.room.tile_light(x, y, self.light_color);
+        if matches!(light_color, Color::GRAY) {
+            return false;
+        }
+        tile_color.contains(light_color)
     }
 
     pub fn undo(&mut self, event: HistoryEvent) {
@@ -237,18 +248,23 @@ impl HeadlessScene {
     }
 }
 
+fn clamp_or_center(c: i64, min: i64, max: i64) -> i64 {
+    if min <= max { c.clamp(min, max) }
+    else { (min - max) / 2 + max }
+}
+
 pub struct Scene {
     texture: GlTexture,
     light_buffer: FrameBuffer,
     pub tag: Option<SceneTag>,
     state: HeadlessScene,
-    camera_mode: CameraMode,
+    camera: Camera,
     ambient_color: [f32; 4],
 }
 
 impl Scene {
-    pub fn new(config: SceneConfig, camera_mode: CameraMode) -> Self {
-        let SceneConfig {state, ambient_color, tag } = config;
+    pub fn new(config: SceneConfig) -> Self {
+        let SceneConfig {state, ambient_color, tag, camera } = config;
 
         let mut texture_settings = opengl_graphics::TextureSettings::new();
         texture_settings.set_mag(opengl_graphics::Filter::Nearest);
@@ -262,20 +278,29 @@ impl Scene {
             light_buffer,
             tag,
             state,
-            camera_mode,
+            camera,
             ambient_color,
         }
     }
 
     // TODO: if the level's too small probably center it instead
     fn camera(&self) -> (i64, i64) {
-        let (x, y) = match self.camera_mode {
-            CameraMode::Player => self.state.player.center(),
-            CameraMode::Fixed(x, y) => (x, y),
+        let room_width = self.state.room.pixel_width();
+        let room_height = self.state.room.pixel_height();
+        let (px, py) = self.state.player.center();
+        let x = match self.camera.x_mode {
+            CameraMode::Player => px,
+            CameraMode::Fixed(x) => x,
+            CameraMode::Centered => room_width / 2,
+        };
+        let y = match self.camera.y_mode {
+            CameraMode::Player => py,
+            CameraMode::Fixed(y) => y,
+            CameraMode::Centered => room_height / 2,
         };
         (
-            x.clamp(DISPLAY_WIDTH_HALF, self.state.room.pixel_width() - DISPLAY_WIDTH_HALF),
-            y.clamp(DISPLAY_HEIGHT_HALF, self.state.room.pixel_height() - DISPLAY_HEIGHT_HALF),
+            clamp_or_center(x, DISPLAY_WIDTH_HALF, room_width - DISPLAY_WIDTH_HALF),
+            clamp_or_center(y, DISPLAY_HEIGHT_HALF, room_height - DISPLAY_HEIGHT_HALF),
         )
     }
 
@@ -385,33 +410,162 @@ impl Scene {
 mod tests {
     use super::*;
 
+    fn walk_east(state: &mut HeadlessScene) {
+        let evt = state.navigate(Direction::East);
+        state.resolve();
+        assert!(matches!(evt, Some(HistoryEvent {
+            event_type: HistoryEventType::Walk,
+            direction: Direction::West,
+        })), "{evt:?}");
+    }
+
+    fn walk_north(state: &mut HeadlessScene) {
+        let evt = state.navigate(Direction::North);
+        state.resolve();
+        assert!(matches!(evt, Some(HistoryEvent {
+            event_type: HistoryEventType::Walk,
+            direction: Direction::South,
+        })), "{evt:?}");
+    }
+
+    fn walk_south(state: &mut HeadlessScene) {
+        let evt = state.navigate(Direction::South);
+        state.resolve();
+        assert!(matches!(evt, Some(HistoryEvent {
+            event_type: HistoryEventType::Walk,
+            direction: Direction::North,
+        })), "{evt:?}");
+    }
+
+    fn stopped_east(state: &mut HeadlessScene) {
+        let evt = state.navigate(Direction::East);
+        state.resolve();
+        assert!(matches!(evt, None), "{evt:?}");
+    }
+
+    fn stopped_north(state: &mut HeadlessScene) {
+        let evt = state.navigate(Direction::North);
+        state.resolve();
+        assert!(matches!(evt, None), "{evt:?}");
+    }
+
+    fn stopped_south(state: &mut HeadlessScene) {
+        let evt = state.navigate(Direction::South);
+        state.resolve();
+        assert!(matches!(evt, None), "{evt:?}");
+    }
+
+    fn push_west(state: &mut HeadlessScene) {
+        let evt = state.navigate(Direction::West);
+        state.resolve();
+        assert!(matches!(evt, Some(HistoryEvent {
+            event_type: HistoryEventType::Push,
+            direction: Direction::East,
+        })), "{evt:?}");
+    }
+
+    fn push_east(state: &mut HeadlessScene) {
+        let evt = state.navigate(Direction::East);
+        state.resolve();
+        assert!(matches!(evt, Some(HistoryEvent {
+            event_type: HistoryEventType::Push,
+            direction: Direction::West,
+        })), "{evt:?}");
+    }
+
+    fn push_south(state: &mut HeadlessScene) {
+        let evt = state.navigate(Direction::South);
+        state.resolve();
+        assert!(matches!(evt, Some(HistoryEvent {
+            event_type: HistoryEventType::Push,
+            direction: Direction::North,
+        })), "{evt:?}");
+    }
+
+    fn push_south_and_advance(state: &mut HeadlessScene) {
+        push_south(state);
+        walk_north(state);
+        walk_east(state);
+    }
+
+    fn walk_south_and_advance(state: &mut HeadlessScene) {
+        walk_south(state);
+        walk_north(state);
+        walk_east(state);
+    }
+
     #[test]
     fn test_push() {
         let lvl = include_bytes!("../bin/levels/tests/test_push.skb");
         let SceneConfig { mut state, .. } = SceneConfig::from_file(lvl);
 
-        {
-            let evt = state.navigate(Direction::East);
-            state.resolve();
-            assert!(matches!(evt, Some(HistoryEvent {
-                event_type: HistoryEventType::Push,
-                direction: Direction::West,
-            })), "{evt:?}");
-        }
+        stopped_north(&mut state);
+        push_east(&mut state);
+        push_east(&mut state);
+        stopped_east(&mut state);
+        walk_south(&mut state);
+        stopped_south(&mut state);
+        push_west(&mut state);
+    }
 
-        {
-            let evt = state.navigate(Direction::East);
-            state.resolve();
-            assert!(matches!(evt, Some(HistoryEvent {
-                event_type: HistoryEventType::Push,
-                direction: Direction::West,
-            })), "{evt:?}");
-        }
+    #[test]
+    fn test_primary_push() {
+        let lvl = include_bytes!("../bin/levels/tests/test_primary_push.skb");
+        let SceneConfig { mut state, .. } = SceneConfig::from_file(lvl);
 
-        {
-            let evt = state.navigate(Direction::East);
-            state.resolve();
-            assert!(matches!(evt, None), "{evt:?}");
-        }
+        // moving thru green light
+        // k̽r̽g̽b̽c̽y̽m̽w̽
+        push_south_and_advance(&mut state);  // push black
+        push_south_and_advance(&mut state);  // push red
+        walk_south_and_advance(&mut state);  // walk green
+        push_south_and_advance(&mut state);  // push blue
+        walk_south_and_advance(&mut state);  // walk cyan
+        walk_south_and_advance(&mut state);  // walk yellow
+        push_south_and_advance(&mut state);  // push magenta
+        walk_south_and_advance(&mut state);  // walk white
+    }
+
+    #[test]
+    fn test_secondary_push() {
+        let lvl = include_bytes!("../bin/levels/tests/test_secondary_push.skb");
+        let SceneConfig { mut state, .. } = SceneConfig::from_file(lvl);
+
+        state.navigate(Direction::South);
+        state.resolve();
+
+        walk_south(&mut state);
+
+        // moving thru magenta light
+        // k̽r̽g̽b̽c̽y̽m̽w̽
+        push_south_and_advance(&mut state);  // push black
+        push_south_and_advance(&mut state);  // push red
+        push_south_and_advance(&mut state);  // push green
+        push_south_and_advance(&mut state);  // push blue
+        push_south_and_advance(&mut state);  // push cyan
+        push_south_and_advance(&mut state);  // push yellow
+        walk_south_and_advance(&mut state);  // walk magenta
+        walk_south_and_advance(&mut state);  // walk white
+    }
+
+    #[test]
+    fn test_secondary_obscured() {
+        let lvl = include_bytes!("../bin/levels/tests/test_secondary_obscured.skb");
+        let SceneConfig { mut state, .. } = SceneConfig::from_file(lvl);
+
+        state.navigate(Direction::South);
+        state.resolve();
+
+        walk_south(&mut state);
+
+        // moving thru _red_ light, despite blue also being on
+        // k̽r̽g̽b̽c̽y̽m̽w̽
+        push_south_and_advance(&mut state);  // push black
+        walk_south_and_advance(&mut state);  // walk red
+        push_south_and_advance(&mut state);  // push green
+        push_south_and_advance(&mut state);  // push blue
+        push_south_and_advance(&mut state);  // push cyan
+        walk_south_and_advance(&mut state);  // walk yellow
+        walk_south_and_advance(&mut state);  // walk magenta
+        walk_south_and_advance(&mut state);  // walk white
     }
 }

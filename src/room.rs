@@ -42,7 +42,7 @@ pub struct Room {
     pub width: usize,
     pub height: usize,
     pub tiles: Vec<Tile>,
-    pub sees_color: Vec<[bool; 3]>
+    pub sees_color: Vec<Color>,  // XXX: this is insufficient if we want to support CMYW lights
 }
 
 impl Room {
@@ -65,23 +65,11 @@ impl Room {
         self.tiles.get(idx).cloned()
     }
 
-    pub fn tile_in_light(&self, x: i32, y: i32, light_color: Color) -> bool {
-        if x < 0 || y < 0 { return false; }
+    pub fn tile_light(&self, x: i32, y: i32, light_color: Color) -> Color {
+        if x < 0 || y < 0 { panic!(); }
         let idx = self.width * (y as usize) + x as usize;
-        self.sees_color.get(idx).map_or(false, |&arr| {
-            // TODO: gonna need more checks for native-secondary colors
-            // TODO: i dont think this is right, who cares, fix rendering.
-            match light_color {
-                Color::RED => arr[0],
-                Color::GREEN => arr[1],
-                Color::BLUE => arr[2],
-                Color::YELLOW => arr[0] || arr[1],
-                Color::CYAN => arr[1] || arr[2],
-                Color::MAGENTA => arr[0] || arr[2],
-                Color::WHITE => arr[0] || arr[1] || arr[2],
-                _ => false,
-            }
-        })
+        let possible_color = *self.sees_color.get(idx).unwrap_or(&Color::GRAY);
+        possible_color & light_color
     }
 
     pub fn pixel_width(&self) -> i64 {
