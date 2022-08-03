@@ -3,6 +3,7 @@ use crate::app::Direction;
 use crate::color::Color;
 use crate::entity::{Entity, IEntity};
 use crate::scene::{HeadlessScene, GameAction};
+use std::cmp::Ordering::*;
 
 const TILE_SIZE: f64 = 16.;
 const BLOCK_WIDTH: f64 = TILE_SIZE;
@@ -10,6 +11,7 @@ const BLOCK_HEIGHT: f64 = TILE_SIZE;
 const BLOCK_OFFSET_Y: f64 = BLOCK_HEIGHT - TILE_SIZE;
 const BLOCK: [f64; 4] = [0., 64., BLOCK_WIDTH, BLOCK_HEIGHT];
 const PUSH_SPEED: f64 = 5.;
+const INTENSITY_SPEED: f32 = 2.5;
 
 enum State {
     Idle,
@@ -18,10 +20,39 @@ enum State {
 }
 use State::*;
 
+struct Intensity {
+    val: f32,
+    goal: f32,
+}
+
+impl Intensity {
+    fn new(initial: f32) -> Self {
+        Intensity {
+            val: initial,
+            goal: initial,
+        }
+    }
+
+    fn update(&mut self, args: &UpdateArgs) {
+        match self.val.partial_cmp(&self.goal).unwrap() {
+            Equal => (),
+            Less => {
+                let dt = INTENSITY_SPEED * args.dt as f32;
+                self.val = self.goal.min(self.val + dt);
+            }
+            Greater => {
+                let dt = INTENSITY_SPEED * args.dt as f32;
+                self.val = self.goal.max(self.val - dt);
+            }
+        }
+    }
+}
+
 pub struct Block {
     pub x: i32,
     pub y: i32,
     state: State,
+    intensity: Intensity,
     facing: Direction,
     pub color: Color,
     dead: bool,
@@ -32,6 +63,7 @@ impl Block {
         Self {
             x, y, state: Idle,
             facing: Direction::East,
+            intensity: Intensity::new(1.),
             color,
             dead: false,
         }
@@ -48,6 +80,12 @@ impl Block {
             }
         }
         (0., 0.)
+    }
+
+    pub fn set_in_light(&mut self, in_light: bool) {
+        let intensity = if in_light { 0.5 }
+            else { 1. };
+        self.intensity.goal = intensity;
     }
 
     pub fn push(&mut self, direction: Direction) {
@@ -67,12 +105,15 @@ impl IEntity for Block {
         let x = self.x as f64 * TILE_SIZE;
         let y = self.y as f64 * TILE_SIZE - BLOCK_OFFSET_Y;
         let (sx, sy) = self.sub_position();
-        Image::new_color(self.color.as_component())
+        let mut color = self.color.as_component();
+        color[3] = self.intensity.val;
+        Image::new_color(color)
             .src_rect(BLOCK)
             .rect([x - sx, y - sy, BLOCK_WIDTH, BLOCK_HEIGHT])
     }
 
     fn update(&mut self, args: &UpdateArgs) {
+        self.intensity.update(args);
         match self.state {
             State::Slide(p) => {
                 let new_p = p + args.dt * PUSH_SPEED;

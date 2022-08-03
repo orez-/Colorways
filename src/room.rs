@@ -72,6 +72,17 @@ impl Room {
         possible_color & light_color
     }
 
+    pub fn tile_in_light(&self, x: i32, y: i32, tile_color: Color, light_color: Color) -> bool {
+        if matches!(tile_color, Color::WHITE) {
+            return true;
+        }
+        let light_color = self.tile_light(x, y, light_color);
+        if matches!(light_color, Color::GRAY) {
+            return false;
+        }
+        tile_color.contains(light_color)
+    }
+
     pub fn pixel_width(&self) -> i64 {
         self.width as i64 * 16
     }

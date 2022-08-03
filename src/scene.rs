@@ -95,22 +95,36 @@ impl HeadlessScene {
         self.player.resolve();
     }
 
-    pub fn radio_set_light_color(&mut self, color: Color) {
-        if self.light_color == color { return; }
+    pub fn radio_set_light_color(&mut self, new_color: Color) {
+        if self.light_color == new_color { return; }
+        let old_color = self.light_color;
+        self.light_color = new_color;
+
         for entity in self.entities.iter_mut() {
-            if let Entity::Lightbulb(bulb) = entity {
-                if bulb.color == self.light_color { bulb.turn_off(); }
-                else if bulb.color == color { bulb.turn_on(); }
+            match entity {
+                Entity::Lightbulb(bulb) => {
+                    if bulb.color == old_color { bulb.turn_off(); }
+                    else if bulb.color == new_color { bulb.turn_on(); }
+                }
+                Entity::Block(block) => {
+                    let in_light = self.room.tile_in_light(block.x, block.y, block.color, new_color);
+                    block.set_in_light(in_light);
+                }
+                _ => (),
             }
         }
-        self.light_color = color;
     }
 
     pub fn toggle_light_color(&mut self, color: Color) {
         self.light_color ^= color;
         for entity in self.entities.iter_mut() {
-            if let Entity::Lightbulb(bulb) = entity {
-                if color == bulb.color { bulb.toggle(); }
+            match entity {
+                Entity::Lightbulb(bulb) if color == bulb.color => { bulb.toggle(); }
+                Entity::Block(block) => {
+                    let in_light = self.room.tile_in_light(block.x, block.y, block.color, self.light_color);
+                    block.set_in_light(in_light);
+                }
+                _ => (),
             }
         }
     }
@@ -124,25 +138,13 @@ impl HeadlessScene {
         Some(&self.entities[idx])
     }
 
-    fn entity_at_mut(&mut self, x: i32, y: i32) -> Option<&mut Entity> {
-        let idx = self.entity_id_at(x, y)?;
-        Some(&mut self.entities[idx])
-    }
-
     pub fn tile_is_passable(&self, x: i32, y: i32) -> bool {
         let tile = self.room.tile_at(x, y);
         tile.map_or(false, |tile| tile.is_passable())
     }
 
     pub fn tile_in_light(&self, x: i32, y: i32, tile_color: Color) -> bool {
-        if matches!(tile_color, Color::WHITE) {
-            return true;
-        }
-        let light_color = self.room.tile_light(x, y, self.light_color);
-        if matches!(light_color, Color::GRAY) {
-            return false;
-        }
-        tile_color.contains(light_color)
+        self.room.tile_in_light(x, y, tile_color, self.light_color)
     }
 
     pub fn undo(&mut self, event: HistoryEvent) {
@@ -152,9 +154,15 @@ impl HeadlessScene {
             HistoryEventType::Walk => (),
             HistoryEventType::Push => {
                 let (bx, by) = event.direction.reverse().from(px, py);
-                if let Some(Entity::Block(block)) = self.entity_at_mut(bx, by) {
+                // Ugly. Awful. Rust has failed me on this day.
+                let idx = self.entity_id_at(bx, by).unwrap();
+                let in_light = if let Entity::Block(block) = &self.entities[idx] {
+                    self.room.tile_in_light(px, py, block.color, self.light_color)
+                } else { false };
+                if let Entity::Block(block) = &mut self.entities[idx] {
                     block.x = px;
                     block.y = py;
+                    block.set_in_light(in_light);
                 }
             },
             HistoryEventType::Sink(color) => {
@@ -239,6 +247,8 @@ impl HeadlessScene {
                 };
                 if let Entity::Block(block) = &mut self.entities[entity_id] {
                     block.push(direction);
+                    let in_light = self.room.tile_in_light(block.x, block.y, block.color, self.light_color);
+                    block.set_in_light(in_light);
                 } else { unreachable!(); }
                 evt
             }
