@@ -106,9 +106,17 @@ impl HeadlessScene {
                     if bulb.color == old_color { bulb.turn_off(); }
                     else if bulb.color == new_color { bulb.turn_on(); }
                 }
-                Entity::Block(block) => {
-                    let in_light = self.room.tile_in_light(block.x, block.y, block.color, new_color);
-                    block.set_in_light(in_light);
+                Entity::Block(e) => {
+                    let in_light = self.room.tile_in_light(e.x, e.y, e.color, new_color);
+                    e.set_in_light(in_light);
+                }
+                Entity::LightToggle(e) => {
+                    let in_light = self.room.tile_in_light(e.x, e.y, e.color, self.light_color);
+                    e.set_in_light(in_light);
+                }
+                Entity::LightRadio(e) => {
+                    let in_light = self.room.tile_in_light(e.x, e.y, e.color, self.light_color);
+                    e.set_in_light(in_light);
                 }
                 _ => (),
             }
@@ -120,9 +128,17 @@ impl HeadlessScene {
         for entity in self.entities.iter_mut() {
             match entity {
                 Entity::Lightbulb(bulb) if color == bulb.color => { bulb.toggle(); }
-                Entity::Block(block) => {
-                    let in_light = self.room.tile_in_light(block.x, block.y, block.color, self.light_color);
-                    block.set_in_light(in_light);
+                Entity::Block(e) => {
+                    let in_light = self.room.tile_in_light(e.x, e.y, e.color, self.light_color);
+                    e.set_in_light(in_light);
+                }
+                Entity::LightToggle(e) => {
+                    let in_light = self.room.tile_in_light(e.x, e.y, e.color, self.light_color);
+                    e.set_in_light(in_light);
+                }
+                Entity::LightRadio(e) => {
+                    let in_light = self.room.tile_in_light(e.x, e.y, e.color, self.light_color);
+                    e.set_in_light(in_light);
                 }
                 _ => (),
             }

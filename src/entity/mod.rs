@@ -1,6 +1,7 @@
 mod block;
 mod entity;
 mod exit;
+mod intensity;
 mod lightbulb;
 mod light_radio;
 mod light_toggle;
